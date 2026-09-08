@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/luxavr/agent-undo/internal/security"
 )
 
 func TestCLIDoctorReady(t *testing.T) {
@@ -29,6 +31,13 @@ func TestCLIDoctorReady(t *testing.T) {
 	}
 	if strings.Contains(stdout, "SUCCESS") || strings.Contains(stdout, "FAILED") {
 		t.Fatal("doctor must not use verify vocabulary")
+	}
+	b, err := security.NewBoundary(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stdout, "checking: "+b.Root()) {
+		t.Fatalf("doctor must print the directory it inspects:\n%s", stdout)
 	}
 }
 

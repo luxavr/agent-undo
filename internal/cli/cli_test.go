@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/luxavr/agent-undo/internal/version"
 )
 
 func TestHelp(t *testing.T) {
@@ -37,8 +39,8 @@ func TestVersion(t *testing.T) {
 		if code != 0 || stderr != "" {
 			t.Fatalf("args %v: code %d stderr %q", args, code, stderr)
 		}
-		if strings.TrimSpace(stdout) != Version {
-			t.Fatalf("got %q", stdout)
+		if strings.TrimSpace(stdout) != version.Version {
+			t.Fatalf("got %q want %q", stdout, version.Version)
 		}
 	}
 }

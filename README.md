@@ -2,9 +2,15 @@
 
 ## Ctrl+Z for AI agents.
 
-![Canonical demo: agent mutates the repo, receipt shows +3 / ~3 / -1, undo prints SUCCESS](docs/demo.gif)
+Checkpoint and restore a local terminal coding session with:
 
-> Checkpoint and restore a local terminal coding session with `agent-undo run <agent>`.
+```text
+agent-undo run <agent>
+```
+
+One checkpoint per session. One command to restore it.
+
+![Canonical demo: agent mutates the repo, receipt shows +3 / ~3 / -1, undo prints SUCCESS](docs/demo.gif)
 
 ```text
 $ agent-undo run ./demo-agent
@@ -34,18 +40,42 @@ Those lines are from the canonical demo fixture (`examples/setup-demo`), not a m
 
 ### Install
 
+macOS or Linux. Windows is unsupported in v0.1. There is no Homebrew formula and no `curl | sh` installer.
+
+**Prebuilt binaries** will ship in the `v0.1.0` [release](https://github.com/luxavr/agent-undo/releases) when that tag exists. Until then, do not curl a `v0.1.0` download URL.
+
+**Development / contributors** (Go 1.23+):
+
 ```bash
 go install github.com/luxavr/agent-undo/cmd/agent-undo@main
+```
+
+Then, in the repository you intend to protect (not `$HOME` unless that directory is the workspace):
+
+```bash
+cd <your-repo>
 agent-undo doctor
 ```
 
-macOS or Linux. Go 1.23+. After `v0.1.0` is tagged, prefer the reproducible form:
+`doctor` prints `checking: /absolute/path` for the directory it inspects. After `v0.1.0`, the README will make the checksum-verified release binary the primary path and pin `go install` to `@v0.1.0`.
+
+### Demo
+
+The demo fixture lives in this repository. Clone it; do not expect a release asset to contain `examples/`.
 
 ```bash
-go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
+git clone https://github.com/luxavr/agent-undo.git
+cd agent-undo
+demo=$(./examples/setup-demo)
+./examples/setup-demo --check
+cd "$demo"
+agent-undo doctor
+agent-undo run ./demo-agent
+agent-undo undo --yes <session-id>
+agent-undo verify <session-id>
 ```
 
-There is no Homebrew formula and no install script in v0.1.
+Never run the demo against this source tree. `./demo-agent` refuses to run unless `.agent-undo-demo` is present. Default mutation is modify / create / delete. `--commit` and `--branch` are opt-in. After undo, `.agent-undo-demo` and `demo-agent` may remain untracked; that is correct.
 
 ### Run
 
@@ -54,20 +84,9 @@ agent-undo run claude
 agent-undo run -- your-agent --flags
 ```
 
-Try it on the disposable demo (never this source tree):
-
-```bash
-demo=$(./examples/setup-demo)
-./examples/setup-demo --check
-cd "$demo"
-agent-undo run ./demo-agent
-```
-
 `run` takes a lock, writes a verified checkpoint, starts the command in its own process group, then prints a receipt. `run` and `session show` print the same receipt.
 
-`./demo-agent` refuses to run unless `.agent-undo-demo` is present. Default mutation is modify / create / delete. `--commit` and `--branch` are opt-in.
-
-v0.1 is wrapper-based. Cursor/editor-native attachment is not supported yet.
+v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.
 
 ### Undo
 
@@ -128,7 +147,7 @@ Full list: [docs/limitations.md](docs/limitations.md).
 
 ### Supported platforms
 
-macOS and Linux. Windows is unsupported in v0.1.
+macOS and Linux (`darwin`/`linux` × `amd64`/`arm64` release assets). Windows is unsupported in v0.1. CI executes tests on `ubuntu-latest` and `macos-latest`; other release targets are cross-compiled, not executed.
 
 ### Security
 
@@ -144,7 +163,7 @@ Commands: `run`, `session list`, `session show`, `undo`, `verify`, `diff`, `reco
 
 ### Development
 
-From a checkout:
+From a checkout. Go 1.23+. Untagged binaries report `0.0.0-dev`.
 
 ```bash
 go build -o bin/agent-undo ./cmd/agent-undo
@@ -153,7 +172,7 @@ go test -race ./...
 go vet ./...
 ```
 
-CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
+`go install` until `v0.1.0` is documented under Install. GOPATH troubleshooting is in [CONTRIBUTING.md](CONTRIBUTING.md). CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
 
 ### Contributing
 

@@ -16,6 +16,9 @@ const (
 func Render(r Report) string {
 	var b strings.Builder
 	b.WriteString("AGENT UNDO DOCTOR\n")
+	if r.Checking != "" {
+		fmt.Fprintf(&b, "\nchecking: %s\n", r.Checking)
+	}
 	for _, s := range r.Sections {
 		b.WriteByte('\n')
 		b.WriteString(s.Title)

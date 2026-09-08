@@ -11,6 +11,8 @@ macOS and Linux. Windows is unsupported.
 ## Please include
 
 - Agent Undo version (`agent-undo version`)
+- How you installed it (GitHub Release asset name, or `go install`)
+- Checksum verification result if you used a release binary
 - OS
 - Whether the workspace is a git repo
 - Exact command

@@ -17,3 +17,9 @@ vendor/
 
 # Checkpoints if anyone runs the tool in-tree later
 .agent-undo/
+
+# Local release dry-runs (official artifacts come from the tag workflow)
+/dist/
+/checksums.txt
+/build-info.txt
+/release-notes.md

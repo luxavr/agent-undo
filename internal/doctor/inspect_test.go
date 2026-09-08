@@ -34,6 +34,25 @@ func TestInspectNonGitReady(t *testing.T) {
 	}
 }
 
+func TestInspectCheckingAbsolutePath(t *testing.T) {
+	root := t.TempDir()
+	b, err := security.NewBoundary(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep := Inspect(context.Background(), Options{Root: root, Home: t.TempDir(), GOOS: "darwin"})
+	out := Render(rep)
+	want := "checking: " + b.Root()
+	if !strings.Contains(out, want) {
+		t.Fatalf("missing %q in\n%s", want, out)
+	}
+	checkAt := strings.Index(out, "checking:")
+	envAt := strings.Index(out, "Environment")
+	if checkAt < 0 || envAt < 0 || checkAt > envAt {
+		t.Fatalf("checking must appear above Environment:\n%s", out)
+	}
+}
+
 func TestInspectLinuxLabel(t *testing.T) {
 	rep := Inspect(context.Background(), Options{Root: t.TempDir(), Home: t.TempDir(), GOOS: "linux"})
 	if rep.Status != StatusReady {
@@ -62,6 +81,9 @@ func TestInspectInvalidBoundary(t *testing.T) {
 	rep := Inspect(context.Background(), Options{Root: file, Home: t.TempDir(), GOOS: "darwin"})
 	if rep.Status != StatusNotReady {
 		t.Fatalf("%s\n%s", rep.Status, Render(rep))
+	}
+	if !strings.Contains(Render(rep), "checking: ") {
+		t.Fatalf("invalid boundary must still name the path:\n%s", Render(rep))
 	}
 }
 

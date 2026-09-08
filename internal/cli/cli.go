@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-)
 
-// Version is overridden at build time with -ldflags.
-var Version = "0.0.0-dev"
+	"github.com/luxavr/agent-undo/internal/version"
+)
 
 const (
 	exitOK    = 0
@@ -54,7 +53,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, helpText)
 		return exitOK
 	case "-v", "--version", "version":
-		fmt.Fprintln(stdout, Version)
+		fmt.Fprintln(stdout, version.Version)
 		return exitOK
 	case "run":
 		return cmdRun(ctx, args[1:], stdout, stderr)

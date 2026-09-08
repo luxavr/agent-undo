@@ -10,7 +10,7 @@ Cursor/editor-native attachment is not supported. v0.1 is wrapper-based: `agent-
 
 ## Platforms
 
-Supported: macOS, Linux. CI: `ubuntu-latest`, `macos-latest`.
+Supported: macOS, Linux. Release assets: `darwin`/`linux` × `amd64`/`arm64`. CI executes tests on `ubuntu-latest` and `macos-latest`. Cross-compiled targets are built, not executed.
 
 Windows is unsupported in v0.1 and is not a launch blocker.
 

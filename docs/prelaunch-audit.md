@@ -108,8 +108,9 @@ No open **BLOCKER**. Residual: a hostile agent with the user’s uid can still d
 Open:
 
 1. Human journeys A–D on a clean machine (install → doctor/run/show/diff/undo/verify; failed agent; interrupt; commit+undo+recover).
-2. Human ship/no-ship decision.
-3. Reproducible `v0.1.0` tag (not cut in this session).
+2. Distribution KPIs T1–T4 on a clean machine (do not replace A–D). Dry-run T1 with `scripts/build-release.sh` until the tag exists.
+3. Human ship/no-ship decision.
+4. Reproducible `v0.1.0` tag (not cut in this session).
 
 Resolved this session:
 

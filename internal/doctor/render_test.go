@@ -34,6 +34,14 @@ Status:
 	}
 }
 
+func TestRenderChecking(t *testing.T) {
+	t.Parallel()
+	got := Render(Report{Checking: "/tmp/repo", Status: StatusReady})
+	if !strings.HasPrefix(got, "AGENT UNDO DOCTOR\n\nchecking: /tmp/repo\n") {
+		t.Fatal(got)
+	}
+}
+
 func TestRenderHeldLock(t *testing.T) {
 	t.Parallel()
 	got := Render(Report{

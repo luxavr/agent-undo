@@ -63,6 +63,7 @@ type Section struct {
 // Report is a deterministic doctor result. Render is a pure projection.
 type Report struct {
 	Status   Status
+	Checking string
 	Sections []Section
 }
 
@@ -98,11 +99,16 @@ func Inspect(ctx context.Context, opts Options) Report {
 	}
 	env.Lines = append(env.Lines, Line{Level: LevelOK, Text: "Go runtime not required"})
 
+	checking := opts.Root
+	if abs, err := filepath.Abs(opts.Root); err == nil {
+		checking = abs
+	}
 	b, err := security.NewBoundary(opts.Root)
 	if err != nil {
 		repo.Lines = append(repo.Lines, Line{Level: LevelFail, Text: "repository boundary cannot be established"})
 		repo.Lines = append(repo.Lines, Line{Level: LevelFail, Text: err.Error()})
 	} else {
+		checking = b.Root()
 		repo.Lines = append(repo.Lines, Line{Level: LevelOK, Text: "repository detected"})
 		repo.Lines = append(repo.Lines, Line{Level: LevelOK, Text: "repository boundary valid"})
 	}
@@ -169,7 +175,7 @@ func Inspect(ctx context.Context, opts Options) Report {
 		{Level: LevelNote, Text: "Cursor/editor-native attachment is not supported in v0.1"},
 	}
 
-	rep := Report{Sections: []Section{env, repo, storeSec, fsSec, gitSec, support}}
+	rep := Report{Checking: checking, Sections: []Section{env, repo, storeSec, fsSec, gitSec, support}}
 	rep.Status = statusOf(rep)
 	return rep
 }

@@ -20,11 +20,13 @@ internal/
   process/               direct exec, process group, SIGINT→TERM→KILL
   security/              repository boundary, traversal, symlink rules
   doctor/                install/repository readiness (no repair, no crawl)
+  version/               CLI identity; release builds inject the tag via ldflags
 adapters/
   git/                   read HEAD/branch/tracked/ignored; write only after ADR 0002 + restore Apply
   filesystem/            lstat/read/create within a Boundary
   shell/                 not in v0.1 receipts
   agents/                named argv helpers later; wrap is process.Run
+scripts/build-release.sh four GOOS/GOARCH binaries + checksums (used by the v* tag workflow)
 ```
 
 `checkpoint`, `restore`, and `verify` must not import `cli`. Adapters do not implement path policy; they call `internal/security`.
