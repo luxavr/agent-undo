@@ -1,0 +1,19 @@
+# Binaries
+/agent-undo
+/bin/
+*.exe
+*.test
+*.out
+coverage.out
+
+# Go
+vendor/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Checkpoints if anyone runs the tool in-tree later
+.agent-undo/

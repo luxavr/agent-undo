@@ -1,0 +1,135 @@
+#!/bin/sh
+# Materialize a disposable git demo from checked-in fixture files.
+# stdout: absolute path of the materialized repository.
+# stderr: next commands.
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "${0%/*}" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+FIXTURE="$SCRIPT_DIR/demo-repo"
+AGENT_SRC="$SCRIPT_DIR/demo-agent"
+DEFAULT_DEST="${TMPDIR:-/tmp}/agent-undo-demo"
+DEST="${AGENT_UNDO_DEMO_DIR:-$DEFAULT_DEST}"
+
+MARKER_TEXT="agent-undo-demo-v1"
+
+die() {
+	printf '%s\n' "$*" >&2
+	exit 1
+}
+
+usage() {
+	printf '%s\n' "usage: examples/setup-demo [--check] [--help]" >&2
+	printf '%s\n' "materializes a disposable git repo (default: $DEFAULT_DEST)" >&2
+	printf '%s\n' "override with AGENT_UNDO_DEMO_DIR" >&2
+	exit 1
+}
+
+find_binary() {
+	if [ -n "${AGENT_UNDO_BIN:-}" ] && [ -x "$AGENT_UNDO_BIN" ]; then
+		printf '%s\n' "$AGENT_UNDO_BIN"
+		return 0
+	fi
+	if [ -x "$REPO_ROOT/bin/agent-undo" ]; then
+		printf '%s\n' "$REPO_ROOT/bin/agent-undo"
+		return 0
+	fi
+	command -v agent-undo 2>/dev/null || return 1
+}
+
+check_demo() {
+	[ -d "$DEST" ] || die "setup-demo --check: $DEST does not exist (run examples/setup-demo first)"
+	[ -f "$DEST/.agent-undo-demo" ] || die "setup-demo --check: missing marker $DEST/.agent-undo-demo"
+	got=$(sed -n '1p' "$DEST/.agent-undo-demo")
+	[ "$got" = "$MARKER_TEXT" ] || die "setup-demo --check: unexpected marker contents"
+	[ -d "$DEST/.git" ] || die "setup-demo --check: $DEST is not a git repository"
+	[ -f "$DEST/app.sh" ] || die "setup-demo --check: missing app.sh"
+	[ -f "$DEST/config/app.toml" ] || die "setup-demo --check: missing config/app.toml"
+	[ -f "$DEST/notes.txt" ] || die "setup-demo --check: missing notes.txt"
+	[ -f "$DEST/.env.local" ] || die "setup-demo --check: missing .env.local"
+	[ -x "$DEST/demo-agent" ] || die "setup-demo --check: demo-agent is not executable"
+	grep -q 'hello from demo' "$DEST/app.sh" || die "setup-demo --check: unexpected app.sh"
+	grep -q 'theme = "light"' "$DEST/config/app.toml" || die "setup-demo --check: unexpected config"
+	grep -q 'ship the primitive' "$DEST/notes.txt" || die "setup-demo --check: unexpected notes.txt"
+	grep -q 'DEMO_SECRET=not-a-real-secret' "$DEST/.env.local" || die "setup-demo --check: unexpected .env.local"
+	git -C "$DEST" rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "setup-demo --check: git missing in $DEST"
+	count=$(git -C "$DEST" rev-list --count HEAD)
+	[ "$count" -ge 2 ] || die "setup-demo --check: expected at least 2 commits, got $count"
+	bin=$(find_binary) || die "setup-demo --check: agent-undo binary not found (build with: go build -o bin/agent-undo ./cmd/agent-undo)"
+
+	# Safety: demo-agent must refuse outside the marker.
+	probe=$(mktemp -d "${TMPDIR:-/tmp}/agent-undo-demo-probe.XXXXXX")
+	trap 'rm -rf "$probe"' EXIT
+	cp "$DEST/demo-agent" "$probe/demo-agent"
+	chmod +x "$probe/demo-agent"
+	set +e
+	out=$(cd "$probe" && ./demo-agent 2>&1)
+	code=$?
+	set -e
+	[ "$code" -ne 0 ] || die "setup-demo --check: demo-agent ran without a marker"
+	printf '%s\n' "$out" | grep -q "This demo can only run inside a materialized Agent Undo demo repository." \
+		|| die "setup-demo --check: demo-agent missing refuse message"
+
+	printf 'setup-demo --check: ok\n' >&2
+	printf 'demo: %s\n' "$DEST" >&2
+	printf 'agent-undo: %s\n' "$bin" >&2
+	printf '%s\n' "$DEST"
+}
+
+materialize() {
+	[ -d "$FIXTURE" ] || die "setup-demo: missing fixture $FIXTURE"
+	[ -f "$AGENT_SRC" ] || die "setup-demo: missing $AGENT_SRC"
+	command -v git >/dev/null 2>&1 || die "setup-demo: git is required"
+	if [ -e "$DEST" ]; then
+		if [ ! -f "$DEST/.agent-undo-demo" ]; then
+			die "setup-demo: refusing to overwrite $DEST (no .agent-undo-demo marker)"
+		fi
+		rm -rf "$DEST"
+	fi
+	mkdir -p "$DEST"
+	# Copy fixture files (not a git repo).
+	tar -C "$FIXTURE" -cf - . | tar -C "$DEST" -xf -
+	cp "$AGENT_SRC" "$DEST/demo-agent"
+	chmod +x "$DEST/app.sh" "$DEST/demo-agent"
+	printf '%s\n' "$MARKER_TEXT" > "$DEST/.agent-undo-demo"
+
+	empty=$(mktemp -d "${TMPDIR:-/tmp}/agent-undo-git-template.XXXXXX")
+	git -C "$DEST" init -q -b main --template="$empty"
+	rmdir "$empty"
+	git -C "$DEST" -c core.hooksPath=/dev/null add app.sh config/app.toml notes.txt README.md .gitignore
+	# .env.local is gitignored on purpose; it must still exist on disk.
+	GIT_AUTHOR_NAME='Demo' GIT_AUTHOR_EMAIL='demo@agent-undo.example' \
+		GIT_COMMITTER_NAME='Demo' GIT_COMMITTER_EMAIL='demo@agent-undo.example' \
+		GIT_AUTHOR_DATE='2026-01-15T00:00:00Z' GIT_COMMITTER_DATE='2026-01-15T00:00:00Z' \
+		git -C "$DEST" -c core.hooksPath=/dev/null commit -q -m "demo: initial"
+	printf '%s\n' 'also: keep the demo small' >> "$DEST/notes.txt"
+	git -C "$DEST" -c core.hooksPath=/dev/null add notes.txt
+	GIT_AUTHOR_NAME='Demo' GIT_AUTHOR_EMAIL='demo@agent-undo.example' \
+		GIT_COMMITTER_NAME='Demo' GIT_COMMITTER_EMAIL='demo@agent-undo.example' \
+		GIT_AUTHOR_DATE='2026-01-15T00:01:00Z' GIT_COMMITTER_DATE='2026-01-15T00:01:00Z' \
+		git -C "$DEST" -c core.hooksPath=/dev/null commit -q -m "demo: second commit"
+	# Restore notes to the committed second-commit text already done.
+	# Marker and .env.local stay untracked / ignored.
+
+	bin=$(find_binary || true)
+	printf 'Materialized demo repository.\n\n' >&2
+	printf '  cd %s\n' "$DEST" >&2
+	if [ -n "$bin" ]; then
+		printf '  %s doctor\n' "$bin" >&2
+		printf '  %s run ./demo-agent\n' "$bin" >&2
+		printf '  %s undo --yes <session-id>\n' "$bin" >&2
+		printf '  %s verify <session-id>\n' "$bin" >&2
+	else
+		printf '  go build -o %s/bin/agent-undo %s/cmd/agent-undo\n' "$REPO_ROOT" "$REPO_ROOT" >&2
+		printf '  %s/bin/agent-undo run ./demo-agent\n' "$REPO_ROOT" >&2
+	fi
+	printf '\nThen from this checkout:\n  %s/examples/setup-demo --check\n' "$REPO_ROOT" >&2
+	printf '%s\n' "$DEST"
+}
+
+case "${1:-}" in
+"" ) materialize ;;
+--check ) check_demo ;;
+-h|--help ) usage ;;
+* ) usage ;;
+esac

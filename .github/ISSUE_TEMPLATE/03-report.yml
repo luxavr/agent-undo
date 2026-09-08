@@ -1,0 +1,38 @@
+name: Report
+description: Bug, installation, platform, UX, documentation, feature request, or integration.
+title: "[BUG] "
+labels: ["BUG"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Every issue must be one of these. Data loss belongs in Data safety, not here.
+      options:
+        - BUG
+        - INSTALLATION
+        - PLATFORM
+        - UX
+        - DOCUMENTATION
+        - FEATURE REQUEST
+        - INTEGRATION
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: Change the title prefix to match the type. Feature requests need repeated real-world pain, not a one-off wish.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / what you need
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands (if any)
+      render: shell
+  - type: input
+    id: os
+    attributes:
+      label: OS

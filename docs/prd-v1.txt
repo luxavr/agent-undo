@@ -1,0 +1,2378 @@
+AGENT-UNDO
+EXECUTION PRD + ENGINEERING HANDOFF
+“Ctrl+Z for AI Agents”
+
+Document purpose:
+This is the single handoff document for a Cursor-based implementation team.
+Treat this as the source of truth for MVP scope, architecture, product behavior,
+quality bar, launch strategy, and future expansion.
+
+============================================================
+0. EXECUTIVE DECISION
+============================================================
+
+PRODUCT:
+Agent Undo
+
+ONE-LINE:
+“Ctrl+Z for AI agents.”
+
+CORE PROMISE:
+An AI coding agent can make a mess. Agent Undo lets the developer safely restore
+the state that existed before the agent session.
+
+PRIMARY INITIAL USER:
+Developers using AI coding agents locally, especially Claude Code, Cursor,
+Codex-style agents, terminal agents, and other tools that can modify a repo.
+
+MVP:
+Local-first checkpoint + session log + restore mechanism around an agent run.
+
+DO NOT build first:
+- enterprise dashboard
+- cloud control plane
+- complex RBAC
+- giant policy engine
+- generic “AI governance” platform
+- 50 integrations
+- browser UI
+- distributed tracing platform
+- fancy AI analysis
+
+The first product must be understandable in one sentence and demonstrable
+in under 30 seconds.
+
+THE VIRAL ARTIFACT:
+GitHub repo + README + terminal UX + catastrophic demo.
+
+THE BUSINESS WEDGE:
+Rollback first.
+Observability second.
+Permissions third.
+Governance fourth.
+
+LONG-TERM CATEGORY:
+Infrastructure for safe autonomous software agents.
+
+============================================================
+1. WHY THIS PRODUCT EXISTS
+============================================================
+
+The world is moving from:
+
+AI writes code
+
+to:
+
+AI changes systems.
+
+Once an agent can:
+- edit dozens of files
+- run shell commands
+- install dependencies
+- alter configuration
+- modify git state
+- call external services
+- execute migrations
+- manipulate environments
+
+the developer gets a new problem:
+
+“What exactly did the agent do, and can I safely undo it?”
+
+Traditional version control is not always enough because:
+- not every change is committed
+- generated files may be ignored
+- package installations alter local state
+- scripts can create/delete files
+- environment state can change
+- commands can have side effects
+- developers may want to compare a whole session, not one commit
+
+Agent Undo exists to create a simple safety primitive around agent execution.
+
+MENTAL MODEL:
+
+BEFORE AGENT
+      |
+      v
+[CHECKPOINT]
+      |
+      v
+[AGENT DOES THINGS]
+      |
+      v
+[SESSION RECEIPT]
+      |
+      +------ KEEP ------> current state
+      |
+      +------ INSPECT ---> session diff
+      |
+      +------ UNDO ------> restore checkpoint
+
+============================================================
+2. PRODUCT THESIS
+============================================================
+
+The thesis:
+
+AI agents increase software creation speed.
+Speed increases the amount of risky state changes.
+Therefore developers need a reversible execution layer.
+
+The emotional proposition:
+“I want to let my agent run without being terrified of what happens.”
+
+The technical proposition:
+“Capture enough pre-run state to make agent execution reversible.”
+
+The business proposition:
+“Every agent action can eventually become observable, attributable,
+policy-controlled, and reversible.”
+
+============================================================
+3. POSITIONING
+============================================================
+
+PRIMARY BRAND:
+Agent Undo
+
+TAGLINE:
+Ctrl+Z for AI agents.
+
+ALTERNATE LINES:
+- Let your agent fuck up. Undo it.
+- Run agents without fear.
+- Your agent can make mistakes. Your filesystem doesn't have to live with them.
+- Give autonomous agents an escape hatch.
+- AI can go fast. You should still have a rewind button.
+- “What did it do?” -> Agent Undo.
+- “Undo everything.” -> Agent Undo.
+
+TONE:
+Technical, playful, sharp, slightly irreverent.
+
+DO NOT sound like:
+- enterprise compliance software
+- cybersecurity consultant
+- academic paper
+- generic AI startup
+- “AI-powered next-generation orchestration”
+
+SOUND LIKE:
+A very smart engineer built a brutally useful tool overnight.
+
+============================================================
+4. TARGET USER
+============================================================
+
+PRIMARY:
+Solo developer / indie hacker / startup engineer who uses AI coding agents.
+
+SECONDARY:
+- engineering teams
+- developer tool teams
+- platform engineering
+- security-conscious AI adopters
+- enterprises deploying coding agents
+
+INITIAL USER PROFILE:
+“I let Claude/Cursor/Codex modify my repo and sometimes I don't fully know what
+it changed until after the damage is done.”
+
+USER JOB TO BE DONE:
+“Let my agent operate freely, but make the consequences reversible.”
+
+============================================================
+5. CORE USER EXPERIENCE
+============================================================
+
+Ideal flow:
+
+1. Developer opens a repo.
+2. Developer runs Agent Undo.
+3. Agent Undo creates a lightweight checkpoint.
+4. Developer starts an agent session.
+5. Agent Undo records relevant changes/events.
+6. Session ends.
+7. Terminal shows a concise receipt.
+8. User chooses:
+   - KEEP
+   - INSPECT
+   - UNDO
+
+Example:
+
+$ agent-undo run
+
+╭────────────────────────────────────────────╮
+│ AGENT UNDO                                  │
+│ checkpoint created                          │
+╰────────────────────────────────────────────╯
+
+Agent is running...
+
+╭────────────────────────────────────────────╮
+│ SESSION COMPLETE                            │
+├────────────────────────────────────────────┤
+│ 23 files changed                            │
+│ 4 files created                             │
+│ 2 files deleted                             │
+│ 6 commands observed                         │
+│ 3 packages changed                          │
+│ 1 suspicious command                        │
+├────────────────────────────────────────────┤
+│ [k] keep   [i] inspect   [u] undo           │
+╰────────────────────────────────────────────╯
+
+If undo:
+
+$ agent-undo undo
+
+Restoring...
+
+✓ files restored
+✓ created files removed
+✓ deleted files restored
+✓ working tree restored
+
+DONE.
+
+============================================================
+6. MVP DEFINITION
+============================================================
+
+MVP SUCCESS CRITERIA:
+
+A developer can:
+
+A. start a protected agent session
+B. allow the agent to modify the repo
+C. inspect what happened
+D. undo the session
+E. return the project to the pre-session filesystem/git state
+
+MVP MUST HANDLE:
+- modified files
+- newly created files
+- deleted files
+- renamed/moved files
+- git tracked/untracked distinctions
+- ignored files where safely possible
+- basic metadata needed to reconstruct state
+- interrupted sessions
+- partial restore
+- restore failure reporting
+
+MVP SHOULD HANDLE:
+- package metadata changes
+- shell command logging
+- process lifecycle logging
+- session IDs
+- human-readable session summaries
+
+MVP MAY DEFER:
+- database side effects
+- remote infrastructure changes
+- network mutation rollback
+- cloud resources
+- browser state
+- external SaaS side effects
+
+IMPORTANT:
+Do not falsely advertise that the MVP can undo arbitrary external side effects.
+
+POSITIONING:
+“Undo local workspace state.”
+not:
+“Undo the entire universe.”
+
+============================================================
+7. NON-GOALS
+============================================================
+
+Do not let scope creep destroy the launch.
+
+Not in MVP:
+- full system snapshot
+- kernel-level sandbox
+- arbitrary database rollback
+- AWS rollback
+- Kubernetes rollback
+- perfect security isolation
+- AI-generated remediation
+- autonomous policy decisions
+- organization-wide analytics
+- billing infrastructure
+- mobile application
+- hosted SaaS requirement
+
+If something does not improve:
+1) reversibility,
+2) visibility,
+or
+3) trust,
+cut it.
+
+============================================================
+8. TECHNICAL PRINCIPLES
+============================================================
+
+PRINCIPLE 1:
+Local-first.
+
+No account.
+No cloud dependency.
+No network required for core functionality.
+
+PRINCIPLE 2:
+Safety over cleverness.
+
+Never claim a restore succeeded when verification is incomplete.
+
+PRINCIPLE 3:
+Fail closed when correctness is uncertain.
+
+PRINCIPLE 4:
+Never destroy the original state before a verified backup/checkpoint exists.
+
+PRINCIPLE 5:
+Every mutation must be auditable.
+
+PRINCIPLE 6:
+Restore must be idempotent where practical.
+
+PRINCIPLE 7:
+The user must always understand:
+- what is being captured
+- where it is stored
+- what can be restored
+- what cannot be restored
+
+PRINCIPLE 8:
+The happy path should require almost no configuration.
+
+============================================================
+9. PROPOSED ARCHITECTURE
+============================================================
+
+RECOMMENDED INITIAL STACK:
+
+Language:
+TypeScript OR Go.
+
+Recommendation:
+Use TypeScript for fastest iteration if targeting Node-based developer workflows.
+Use Go if maximum standalone binary simplicity becomes the priority.
+
+CLI:
+Command-based CLI.
+
+Core modules:
+
+/src
+  /cli
+  /core
+    checkpoint
+    restore
+    diff
+    session
+    manifest
+    verify
+  /adapters
+    git
+    filesystem
+    shell
+  /events
+  /storage
+  /ui
+  /utils
+
+Potential commands:
+
+agent-undo init
+agent-undo run
+agent-undo status
+agent-undo sessions
+agent-undo inspect <session>
+agent-undo undo <session>
+agent-undo verify <session>
+agent-undo clean
+
+============================================================
+10. CHECKPOINT DESIGN
+============================================================
+
+GOAL:
+Create a reliable representation of the state BEFORE the agent begins.
+
+Checkpoint should capture:
+
+- repository root
+- git HEAD
+- git status
+- tracked files
+- untracked files
+- ignored files if configured to capture
+- file contents or content-addressed snapshots
+- file metadata necessary for restore
+- manifest version
+- timestamp
+- session ID
+
+PREFERRED MODEL:
+Content-addressed object store.
+
+Conceptual:
+
+~/.agent-undo/
+  objects/
+  sessions/
+  manifests/
+  locks/
+
+Repository-local metadata can optionally live under:
+.git/agent-undo/
+
+Do not pollute the repo with huge files unless explicitly configured.
+
+MANIFEST EXAMPLE:
+
+{
+  "schemaVersion": 1,
+  "sessionId": "...",
+  "repoRoot": "...",
+  "createdAt": "...",
+  "gitHead": "...",
+  "files": [
+    {
+      "path": "src/app.ts",
+      "sha256": "...",
+      "mode": "100644",
+      "size": 1234
+    }
+  ]
+}
+
+============================================================
+11. RESTORE ENGINE
+============================================================
+
+Restore algorithm:
+
+1. Acquire repository lock.
+2. Load checkpoint manifest.
+3. Validate current repository location.
+4. Detect current state.
+5. Compute desired pre-session state.
+6. Show restore plan if interactive.
+7. Preserve current post-agent state in an emergency recovery checkpoint.
+8. Restore original files.
+9. Remove files created after checkpoint where ownership can be established.
+10. Restore deleted files.
+11. Handle renames through content/path reconciliation.
+12. Recompute state.
+13. Verify against checkpoint.
+14. Release lock.
+15. Emit success/failure summary.
+
+CRITICAL:
+Before executing destructive restore:
+create a POST-STATE recovery checkpoint.
+
+This means:
+undo itself can be undone.
+
+That is a killer product property.
+
+JOKE / BRAND MOMENT:
+
+“Undo has an undo.”
+
+Potential terminal line:
+
+✓ pre-agent state restored
+✓ your regret has been archived
+
+============================================================
+12. SAFETY RULES
+============================================================
+
+Every restore operation must:
+- use explicit paths
+- prevent path traversal
+- never write outside repository scope without explicit opt-in
+- avoid following unsafe symlinks
+- detect symlink behavior
+- protect checkpoint integrity
+- use atomic writes where possible
+- maintain locks to prevent concurrent destructive operations
+
+NEVER:
+- rm -rf arbitrary paths
+- trust agent-provided restore paths
+- overwrite without checkpoint verification
+- silently ignore failed restores
+- claim “100% reversible” for external side effects
+
+============================================================
+13. SESSION EVENT MODEL
+============================================================
+
+Each session should have:
+
+session.started
+checkpoint.created
+file.changed
+file.created
+file.deleted
+file.renamed
+command.started
+command.completed
+package.changed
+restore.started
+restore.completed
+restore.failed
+session.completed
+
+EVENT:
+
+{
+  "id": "...",
+  "sessionId": "...",
+  "timestamp": "...",
+  "type": "file.changed",
+  "path": "src/auth.ts",
+  "beforeHash": "...",
+  "afterHash": "...",
+  "metadata": {}
+}
+
+============================================================
+14. SESSION RECEIPT
+============================================================
+
+Receipt should be one of the strongest UX surfaces.
+
+Example:
+
+╭────────────────────────────────────────────╮
+│ 🤖 AGENT SESSION #8A91                      │
+╰────────────────────────────────────────────╯
+
+I watched the robot.
+
+Files
+  + 4 created
+  ~ 23 modified
+  - 2 deleted
+
+Commands
+  31 executed
+
+Dependencies
+  3 changed
+
+Git
+  branch: feature/auth
+  HEAD: 91eaf12
+
+Risk
+  ⚠ 2 destructive commands observed
+
+Outcome
+  “The agent cooked.”
+
+Actions
+  [u] Undo
+  [i] Inspect
+  [k] Keep
+
+Potential joke strings:
+- “I watched the robot.”
+- “The agent cooked.”
+- “The robot touched 29 things.”
+- “No files were harmed. Yet.”
+- “Your future self will thank you.”
+- “Congratulations, you survived autonomous software.”
+- “The agent did a little too much.”
+- “We have receipts.”
+- “Regret is recoverable.”
+- “Undo has your back.”
+- “Your agent committed crimes against architecture.”
+- “Nothing personal. Just git.”
+- “The robot has been contained.”
+- “History has been restored.”
+- “The timeline has been repaired.”
+
+Use jokes sparingly.
+The product must still feel trustworthy.
+
+============================================================
+15. CLI UX
+============================================================
+
+COMMANDS
+
+agent-undo run <agent command>
+
+agent-undo session list
+
+agent-undo session show <id>
+
+agent-undo undo <id>
+
+agent-undo verify <id>
+
+agent-undo diff <id>
+
+agent-undo recover
+
+agent-undo doctor
+
+EXAMPLE:
+
+$ agent-undo run claude
+
+or:
+
+$ agent-undo run "cursor-agent"
+
+or:
+
+$ agent-undo run -- npm run agent
+
+Potential future adapter syntax:
+
+agent-undo claude
+agent-undo codex
+agent-undo cursor
+
+============================================================
+16. “DOCTOR” COMMAND
+============================================================
+
+This should make trust visible.
+
+$ agent-undo doctor
+
+Agent Undo Doctor
+
+✓ repo detected
+✓ git detected
+✓ checkpoint store writable
+✓ atomic restore supported
+✓ repository lock available
+⚠ ignored files not captured
+⚠ external side effects cannot be reversed
+
+Ready.
+
+This prevents false confidence.
+
+============================================================
+17. ERROR UX
+============================================================
+
+Bad:
+
+“Restore failed.”
+
+Good:
+
+RESTORE INCOMPLETE
+
+17 / 17 tracked files restored
+4 / 5 untracked files restored
+
+Unable to restore:
+  .env.local
+Reason:
+  permission denied
+
+Your pre-restore snapshot is preserved here:
+  session-recovery/<id>
+
+Nothing else was deleted.
+
+This is critical.
+Trust is more important than cleverness.
+
+============================================================
+18. TEST STRATEGY
+============================================================
+
+Test categories:
+
+UNIT TESTS
+- manifest encoding/decoding
+- hashing
+- snapshot creation
+- diff calculation
+- path validation
+- event serialization
+
+INTEGRATION TESTS
+- modify file -> restore
+- create file -> restore
+- delete file -> restore
+- rename file -> restore
+- many files -> restore
+- untracked files -> restore
+- ignored files -> restore
+- interrupted process -> recover
+- concurrent run -> blocked safely
+
+PROPERTY TESTS
+For supported filesystem state:
+
+restore(checkpoint(state)) => state
+
+More formally:
+
+state_after_restore ≈ state_before
+
+with explicit exceptions documented.
+
+CHAOS TESTS:
+- process killed during checkpoint
+- process killed during restore
+- disk nearly full
+- permission denied
+- file locked
+- symlink attack attempt
+- malformed manifest
+- corrupted checkpoint
+- concurrent sessions
+
+============================================================
+19. DEFINITION OF DONE FOR MVP
+============================================================
+
+MVP is DONE only when:
+
+1. A clean repo can be checkpointed.
+2. 20+ files can be changed by an agent/process.
+3. Agent Undo can show the session summary.
+4. Restore returns the repo to pre-session state.
+5. Verification can prove the restore.
+6. Restore failure is explicit.
+7. Recovery checkpoint exists.
+8. Tests cover destructive edge cases.
+9. README setup works from a clean machine.
+10. A first-time developer can understand the repo in <2 minutes.
+11. A demo can be recorded in <30 seconds.
+12. No network account is necessary.
+
+============================================================
+20. REPO STRUCTURE
+============================================================
+
+agent-undo/
+  README.md
+  LICENSE
+  CONTRIBUTING.md
+  SECURITY.md
+  CHANGELOG.md
+  package.json
+  tsconfig.json
+  src/
+    cli/
+    core/
+      checkpoint/
+      restore/
+      diff/
+      session/
+      verify/
+    adapters/
+      git/
+      filesystem/
+      shell/
+    storage/
+    events/
+    ui/
+  tests/
+    unit/
+    integration/
+    chaos/
+    fixtures/
+  examples/
+  docs/
+    architecture.md
+    limitations.md
+    security-model.md
+
+README ORDER:
+
+1. giant one-liner
+2. demo GIF/video
+3. install
+4. 30-second example
+5. how it works
+6. limitations
+7. security model
+8. architecture
+9. contributing
+
+============================================================
+21. README HERO
+============================================================
+
+Suggested opening:
+
+# Agent Undo
+
+## Ctrl+Z for AI agents.
+
+AI coding agents can edit your whole repo in seconds.
+
+Sometimes they cook.
+
+Sometimes they commit war crimes against your architecture.
+
+Sometimes you just want:
+
+`cmd/ctrl + z`
+
+Agent Undo creates a checkpoint before an agent session and lets you inspect or
+restore the local workspace afterward.
+
+[GIF: agent destroys repo -> Agent Undo restores it]
+
+Install:
+
+...
+
+Run:
+
+...
+
+Undo:
+
+...
+
+Then immediately show the terminal output.
+
+============================================================
+22. VIRAL DEMO #1
+============================================================
+
+TITLE:
+“I gave my AI agent permission to destroy my repo.”
+
+SCRIPT:
+
+0-3 sec:
+Clean beautiful repo.
+
+3-8 sec:
+Run an agent with deliberately bad instructions.
+
+Example:
+“Refactor the app aggressively. Rename whatever you want. Clean up the entire
+architecture.”
+
+8-15 sec:
+Agent changes:
+- 40 files
+- deletes something
+- changes package.json
+- creates weird files
+
+15-20 sec:
+Terminal:
+
+“SESSION COMPLETE
+42 files changed
+I have receipts.”
+
+20-25 sec:
+Press U.
+
+25-30 sec:
+Everything restored.
+
+Final text:
+
+“Ctrl+Z for AI agents.”
+
+This should be the PRIMARY launch video.
+
+============================================================
+23. VIRAL DEMO #2
+============================================================
+
+Title:
+“Your AI agent just deleted your production config.”
+
+Safer simulation.
+
+Show:
+- config before
+- agent action
+- deletion
+- Agent Undo restore
+
+End:
+“Maybe don't give the robot root next time.”
+
+============================================================
+24. VIRAL DEMO #3
+============================================================
+
+Title:
+“Undo has an undo.”
+
+Flow:
+1. clean state
+2. agent changes project
+3. undo
+4. user changes project again
+5. recover prior state
+
+This demonstrates recovery checkpoint architecture.
+
+============================================================
+25. LAUNCH STRATEGY
+============================================================
+
+DO NOT:
+Launch with a giant Product Hunt campaign first.
+
+FIRST TARGET:
+Developer internet.
+
+Sequence:
+
+PHASE 1:
+Build a fantastic repo.
+
+PHASE 2:
+Make an absurdly good 20–30 sec demo.
+
+PHASE 3:
+Post the demo on X.
+
+PHASE 4:
+Post technical write-up.
+
+PHASE 5:
+Share to:
+- Hacker News
+- Reddit developer communities
+- relevant Discords
+- indie hacker communities
+- AI coding communities
+
+PHASE 6:
+Respond personally to every serious comment.
+
+PHASE 7:
+Ship fixes quickly.
+
+THE POST SHOULD NOT SOUND LIKE A STARTUP ANNOUNCEMENT.
+
+BAD:
+“Introducing Agent Undo, the future of autonomous development.”
+
+GOOD:
+“I built Ctrl+Z for AI agents.”
+
+Then show video.
+
+============================================================
+26. FIRST X POST
+============================================================
+
+Potential post:
+
+I built Ctrl+Z for AI agents.
+
+Your agent can now:
+- edit 50 files
+- delete stuff
+- install packages
+- run commands
+- make a complete mess
+
+Agent Undo checkpoints the repo first.
+
+Then:
+
+`u`
+
+and it goes back.
+
+I call it Agent Undo.
+
+[30 sec demo]
+
+============================================================
+27. SECOND X POST
+============================================================
+
+“I think AI coding has a new primitive:
+
+CREATE
+EDIT
+RUN
+UNDO
+
+We got very good at letting agents do things.
+
+We're not nearly as good at making their actions reversible.
+
+So I built Ctrl+Z for agents.”
+
+============================================================
+28. HACKER NEWS TITLE OPTIONS
+============================================================
+
+Primary:
+Show HN: Agent Undo – Ctrl+Z for AI coding agents
+
+Alternative:
+Show HN: I built a reversible execution layer for coding agents
+
+Do not overmarket.
+Technical explanation should be serious.
+
+============================================================
+29. SOCIAL DISTRIBUTION LOOP
+============================================================
+
+User sees demo
+   ->
+understands product
+   ->
+installs repo
+   ->
+tries it
+   ->
+agent makes a mess
+   ->
+user shares screenshot/video
+   ->
+more developers see it
+   ->
+GitHub stars
+   ->
+contributors
+   ->
+more integrations
+   ->
+more demos
+
+A viral developer product should generate its own content.
+
+The tool's OUTPUT is also the marketing asset.
+
+Examples:
+- “23 files changed”
+- “Agent did 47 commands”
+- “Undo successful”
+- “Your agent tried to edit .env”
+- “Recovered 14 deleted files”
+
+These are shareable screenshots.
+
+============================================================
+30. GITHUB STAR STRATEGY
+============================================================
+
+Optimize README for:
+- instant comprehension
+- visual demo
+- one-line install
+- one-line run
+- clear scope
+- honest limitations
+
+Star-driving moments:
+- excellent README
+- “Ctrl+Z” concept
+- GIF
+- good CLI
+- funny terminal copy
+- active issue responses
+- quick releases
+- integration requests
+
+Do not use fake GitHub manipulation.
+
+Let utility and memeability create stars.
+
+============================================================
+31. CONTRIBUTOR STRATEGY
+============================================================
+
+After initial traction:
+
+Good first issues:
+- Windows support
+- macOS edge cases
+- Linux support
+- shell adapters
+- Codex adapter
+- Claude Code adapter
+- Cursor adapter
+- progress UI
+- restore diff
+- better ignored-file handling
+
+Avoid:
+“Rewrite everything.”
+
+Maintain strict architecture.
+
+============================================================
+32. RELEASE STRATEGY
+============================================================
+
+v0.1
+Core checkpoint + restore
+
+v0.2
+Session history + inspect
+
+v0.3
+More agent adapters
+
+v0.4
+Shell/process event recorder
+
+v0.5
+Risk detection / warnings
+
+v0.6
+Policy preview
+
+v0.7
+Team mode
+
+v1.0
+Stable local agent safety layer
+
+============================================================
+33. ROADMAP: AFTER MVP
+============================================================
+
+NEXT IDEA #1:
+AGENT FLIGHT RECORDER
+
+Pitch:
+“See everything your agent did.”
+
+Store:
+- prompts if opt-in
+- commands
+- files
+- tool calls
+- timing
+- failures
+- dependencies
+- network events where available
+
+UX:
+agent-undo session show abc123
+
+This is the observability layer.
+
+============================================================
+34. ROADMAP: AGENT RECEIPTS
+============================================================
+
+Create a portable “receipt” for each agent session.
+
+Example:
+
+AGENT RECEIPT #A81F
+
+Agent:
+Claude
+
+Duration:
+7m 19s
+
+Changes:
+34 files
+
+Commands:
+87
+
+Packages:
+4
+
+External requests:
+11
+
+Risk events:
+3
+
+Final state hash:
+...
+
+The receipt can eventually be:
+- attached to PRs
+- shared with teammates
+- used in CI
+- stored for audits
+
+============================================================
+35. ROADMAP: AGENT PERMISSION FIREWALL
+============================================================
+
+Next category:
+
+“What is the agent ALLOWED to do?”
+
+Example policy:
+
+allow:
+  read src/**
+  write src/**
+  run tests
+
+ask:
+  package install
+  git push
+
+deny:
+  .env*
+  production/
+  ssh/*
+  cloud credentials
+
+This turns Agent Undo from:
+“recover from mistakes”
+
+into:
+“prevent mistakes.”
+
+Important:
+Do not begin here.
+Launch with undo.
+
+============================================================
+36. ROADMAP: AGENT RISK ENGINE
+============================================================
+
+Detect events such as:
+
+HIGH RISK:
+- rm
+- chmod
+- credential access
+- destructive database command
+- git push --force
+- changing deployment config
+
+MEDIUM:
+- dependency install
+- package lock changes
+- large file modifications
+
+LOW:
+- normal source edits
+- tests
+- formatting
+
+UX:
+
+⚠ HIGH RISK ACTION
+
+The agent attempted:
+
+rm -rf ./migrations
+
+Allow?
+[y] yes
+[n] no
+[p] policy
+
+============================================================
+37. ROADMAP: AGENT POLICY
+============================================================
+
+Eventually:
+
+.agentundo/policy.yaml
+
+Example:
+
+version: 1
+
+rules:
+  - match: ".env*"
+    action: deny
+
+  - match: "src/**"
+    action: allow
+
+  - match: "git push"
+    action: ask
+
+  - match: "npm install"
+    action: ask
+
+  - match: "rm -rf"
+    action: deny
+
+This is where enterprise monetization starts.
+
+============================================================
+38. ROADMAP: TEAM PRODUCT
+============================================================
+
+TEAM FEATURES:
+
+- shared session history
+- organization policy
+- approved tool access
+- audit trail
+- role-based control
+- SSO
+- retention
+- compliance exports
+- centralized configuration
+
+Potential product:
+Agent Undo Cloud
+
+Potential category:
+Agent Control Plane
+
+But do NOT call this the initial product.
+
+============================================================
+39. BUSINESS MODEL
+============================================================
+
+OPEN SOURCE WEDGE:
+
+Free:
+- local undo
+- local sessions
+- basic history
+- core adapters
+
+PAID:
+- team policies
+- shared receipts
+- centralized logs
+- organization controls
+- governance
+- analytics
+- retention
+- integrations
+- enterprise support
+
+Potential pricing direction later:
+
+Individual:
+$0
+
+Pro:
+$10–30 / developer / month
+
+Team:
+$20–60 / developer / month
+
+Enterprise:
+custom
+
+Do not optimize for pricing in MVP.
+
+Optimize for:
+usage,
+trust,
+adoption,
+integration,
+and ecosystem.
+
+============================================================
+40. NORTH STAR METRIC
+============================================================
+
+Initial North Star:
+
+Successful protected agent sessions.
+
+Secondary:
+- restores performed
+- successful restores
+- weekly active developers
+- GitHub stars
+- GitHub forks
+- integrations
+- time from install -> first protected session
+
+Business-stage metrics:
+- organizations
+- seats
+- protected sessions
+- retained teams
+- policy adoption
+
+============================================================
+41. PRODUCT METRIC THAT MATTERS MOST
+============================================================
+
+KEY QUESTION:
+
+“How many users have had at least one moment where Agent Undo saved their ass?”
+
+This is more important early than revenue.
+
+That moment creates:
+- trust
+- retention
+- word of mouth
+- evangelism
+
+============================================================
+42. COMPETITIVE POSITIONING
+============================================================
+
+Do not position as:
+“another AI agent security platform.”
+
+Position as:
+“The reversible execution layer for AI agents.”
+
+Distinct primitives:
+
+Security:
+Can it stop bad actions?
+
+Observability:
+Can I see what happened?
+
+Undo:
+Can I reverse what happened?
+
+Policy:
+What is it allowed to do?
+
+Receipt:
+Can I prove what happened?
+
+Agent Undo begins with:
+UNDO.
+
+Then expands across the stack.
+
+============================================================
+43. THE BIG CATEGORY MAP
+============================================================
+
+AI AGENT SAFETY STACK
+
+Layer 5:
+GOVERNANCE
+- compliance
+- organization policy
+- audit
+
+Layer 4:
+POLICY
+- allow
+- ask
+- deny
+
+Layer 3:
+OBSERVABILITY
+- session history
+- traces
+- receipts
+
+Layer 2:
+SAFETY
+- checkpoints
+- rollback
+- recovery
+
+Layer 1:
+EXECUTION
+- agent
+- shell
+- tools
+- filesystem
+
+Start at Layer 2.
+
+Expand upward.
+
+============================================================
+44. WHY NOT START WITH SECURITY?
+============================================================
+
+Because developers don't wake up wanting:
+“agentic governance.”
+
+They wake up after their agent does something stupid.
+
+The emotional trigger is:
+
+“WHAT DID IT JUST DO?”
+
+Then:
+
+“CAN I UNDO IT?”
+
+Solve that first.
+
+============================================================
+45. WHY THE NAME MATTERS
+============================================================
+
+Good name:
+Agent Undo
+
+Immediately explains:
+- agent
+- reverse action
+
+Great metaphor:
+Ctrl+Z
+
+Memorable.
+Demo-friendly.
+Language-independent.
+Technically intuitive.
+
+Names we should NOT use:
+- AgentSafe
+- AgentGuard
+- AgentShield
+- Autonomous Governance Engine
+- AI Safety Runtime
+- Agent Reliability Framework
+
+Those sound like crowded enterprise categories.
+
+Agent Undo sounds like a developer tool.
+
+============================================================
+46. DESIGN PRINCIPLE: THE PRODUCT SHOULD BE A MEME
+============================================================
+
+Not a joke product.
+
+A serious product with a meme-level explanation.
+
+Examples:
+
+“Ctrl+Z for AI.”
+
+“I built an undo button for Claude.”
+
+“My AI deleted 17 files. Then I pressed U.”
+
+“The agent cooked. I had receipts.”
+
+“Undo has an undo.”
+
+This is the social engine.
+
+============================================================
+47. INTERNAL LEADERSHIP DIRECTIVE
+============================================================
+
+Team, here is how we operate:
+
+We are not building the most complete agent platform.
+
+We are building the simplest possible product that makes one scary problem
+feel solved.
+
+Do not add features because they are impressive.
+
+Add features because they strengthen:
+- reversibility
+- trust
+- visibility
+- distribution
+
+Every engineer should be able to answer:
+“What user problem does this PR solve?”
+
+Every PR should be:
+- small
+- testable
+- reversible
+- documented
+
+Every feature should have:
+- happy path
+- failure path
+- recovery path
+
+============================================================
+48. ENGINEERING EXECUTION BATCHES
+============================================================
+
+BATCH 0 — PROJECT BOOTSTRAP
+
+Goal:
+Clean repo, CLI skeleton, test framework, linting, release pipeline.
+
+Deliver:
+- package config
+- TS config OR Go modules
+- CLI parser
+- test runner
+- formatter
+- CI
+- README skeleton
+
+Acceptance:
+npm/pnpm install works.
+CLI boots.
+CI green.
+
+------------------------------------------------------------
+
+BATCH 1 — FILE SNAPSHOT ENGINE
+
+Goal:
+Reliable local snapshot.
+
+Build:
+- recursive traversal
+- ignore patterns
+- hashing
+- object storage
+- manifest generation
+
+Acceptance:
+Given repo state A:
+checkpoint(A)
+reconstructed state == A
+
+Tests:
+- 1 file
+- 100 files
+- binary
+- unicode
+- nested
+- empty
+- symlink
+
+------------------------------------------------------------
+
+BATCH 2 — DIFF ENGINE
+
+Goal:
+Understand state transitions.
+
+Build:
+- added
+- modified
+- deleted
+- renamed candidate
+- unchanged
+
+Output structured objects.
+
+Acceptance:
+Diff(A,B) exactly represents known fixture changes.
+
+------------------------------------------------------------
+
+BATCH 3 — RESTORE ENGINE
+
+Goal:
+Restore A from arbitrary B.
+
+Build:
+- lock
+- pre-restore checkpoint
+- write files atomically
+- remove safe newly created files
+- restore deleted files
+- verify
+
+Acceptance:
+restore(snapshot(A), B) => A
+
+------------------------------------------------------------
+
+BATCH 4 — SESSION LIFECYCLE
+
+Goal:
+Wrap an agent run.
+
+Build:
+- session ID
+- checkpoint start
+- execute child process
+- capture stdout/stderr metadata
+- session end
+- receipt
+
+Acceptance:
+agent-undo run “test-command” creates valid session.
+
+------------------------------------------------------------
+
+BATCH 5 — CLI EXPERIENCE
+
+Goal:
+Make it beautiful.
+
+Build:
+- progress
+- receipt
+- colors if terminal supports
+- no-color mode
+- interactive undo
+- inspect view
+
+Acceptance:
+First-time user can use it without docs.
+
+------------------------------------------------------------
+
+BATCH 6 — RECOVERY
+
+Goal:
+Undo can itself be safely undone.
+
+Build:
+- recovery checkpoint
+- recover command
+- restore verification
+
+Acceptance:
+After restore, previous state remains recoverable.
+
+------------------------------------------------------------
+
+BATCH 7 — CHAOS
+
+Goal:
+Break everything.
+
+Test:
+- Ctrl+C
+- SIGTERM
+- disk error
+- permissions
+- corrupted snapshot
+- concurrent run
+- huge repo
+- binary file
+- symlink
+
+Acceptance:
+No silent data loss.
+
+------------------------------------------------------------
+
+BATCH 8 — POLISH
+
+Goal:
+Make launch-quality.
+
+Build:
+- README
+- GIF
+- docs
+- install script
+- release packaging
+- examples
+- doctor command
+- security docs
+
+Acceptance:
+Fresh machine -> install -> demo in <5 minutes.
+
+------------------------------------------------------------
+
+BATCH 9 — VIRAL DEMO
+
+Goal:
+Make a video that sells the idea without explanation.
+
+Need:
+- clean repo
+- controlled destruction
+- visible chaos
+- undo
+- restoration
+
+Acceptance:
+A non-engineer can explain the product after watching once.
+
+------------------------------------------------------------
+
+BATCH 10 — LAUNCH
+
+Goal:
+Release.
+
+Deliver:
+- GitHub release
+- X post
+- demo video
+- Show HN
+- Reddit/community distribution
+- feedback triage
+- rapid patch releases
+
+============================================================
+49. CURSOR IMPLEMENTATION BRIEF
+============================================================
+
+PASTE THIS INTO CURSOR AS THE TOP-LEVEL ENGINEERING BRIEF:
+
+“You are the lead engineer for Agent Undo.
+
+Build this as a production-quality open-source developer tool.
+
+Product:
+Ctrl+Z for AI agents.
+
+Mission:
+Safely checkpoint a local repository before an AI agent session, record the
+session, and restore the repository to its pre-session state.
+
+Rules:
+1. Local-first.
+2. No cloud dependency for MVP.
+3. Never destroy user state without a verified recovery checkpoint.
+4. Never silently ignore restore failures.
+5. Prefer simple, boring, reliable engineering.
+6. Write tests before implementing risky filesystem operations.
+7. Treat path handling and symlink behavior as security-sensitive.
+8. Keep public APIs small and typed.
+9. Every destructive operation must be auditable.
+10. Do not implement future enterprise features unless required by the current
+    acceptance criteria.
+
+Before coding:
+- inspect repository
+- propose architecture
+- identify risks
+- create a task checklist
+
+Then execute in small batches.
+
+After every batch:
+- run tests
+- run lint
+- report files changed
+- report known risks
+- do not proceed past failing tests without diagnosing them.
+
+Never claim the product is fully reversible for external side effects.
+MVP scope is local workspace state.”
+
+============================================================
+50. CURSOR CODING LOOP
+============================================================
+
+For every implementation task:
+
+STEP 1
+Understand current architecture.
+
+STEP 2
+Write or update tests.
+
+STEP 3
+Implement minimal change.
+
+STEP 4
+Run tests.
+
+STEP 5
+Run static checks.
+
+STEP 6
+Test failure cases.
+
+STEP 7
+Update docs.
+
+STEP 8
+Summarize:
+- what changed
+- why
+- tests
+- known limitations
+
+Do not let Cursor rewrite unrelated files.
+
+============================================================
+51. CURSOR PROMPT: BATCH EXECUTION
+============================================================
+
+Use this for each batch:
+
+“You are implementing Batch N of Agent Undo.
+
+Read the PRD and current repository.
+
+Your job is ONLY to complete this batch.
+
+Constraints:
+- do not implement later roadmap items
+- do not rewrite unrelated architecture
+- preserve backwards compatibility
+- add tests for all new behavior
+- explicitly test failure conditions
+
+Before implementation:
+1. inspect relevant files
+2. list the exact files you will modify
+3. identify destructive operations
+4. identify edge cases
+
+After implementation:
+1. run tests
+2. run lint/typecheck
+3. run integration tests
+4. summarize changed files
+5. summarize remaining risks
+
+Do not stop at pseudocode. Implement working code.”
+
+============================================================
+52. REVIEW CHECKLIST
+============================================================
+
+Every PR must answer:
+
+Correctness:
+- Does it work?
+
+Safety:
+- Can it destroy user data?
+
+Recovery:
+- If it fails halfway, what happens?
+
+Observability:
+- Can we explain what happened?
+
+Performance:
+- Is it acceptable on large repos?
+
+Portability:
+- macOS?
+- Linux?
+- Windows?
+
+UX:
+- Is the failure message understandable?
+
+Testing:
+- happy
+- failure
+- interruption
+- corruption
+
+============================================================
+53. PERFORMANCE TARGETS
+============================================================
+
+MVP targets:
+
+Small repo:
+checkpoint < 1 sec where practical
+
+Medium repo:
+checkpoint should feel immediate.
+
+Large repo:
+avoid unnecessary full content duplication through deduplication.
+
+Restore:
+optimize for correctness first.
+
+Potential future optimization:
+- content-addressed dedup
+- incremental checkpoint
+- filesystem watchers
+- sparse restore
+- compressed chunks
+
+Do not prematurely optimize before correctness.
+
+============================================================
+54. SECURITY THREAT MODEL
+============================================================
+
+Threats:
+
+T1:
+Malicious path traversal.
+
+T2:
+Symlink escape.
+
+T3:
+Corrupted checkpoint.
+
+T4:
+Agent intentionally deletes checkpoint data.
+
+T5:
+Concurrent restore.
+
+T6:
+Partial write.
+
+T7:
+Interrupted restore.
+
+T8:
+Malicious repository contents.
+
+T9:
+Privilege escalation via spawned commands.
+
+MVP defenses:
+- path canonicalization
+- root boundary validation
+- atomic writes
+- locks
+- integrity hashes
+- recovery checkpoint
+- permission checks
+- explicit limits
+
+Document what is NOT protected.
+
+============================================================
+55. IMPORTANT PRODUCT LIMITATIONS
+============================================================
+
+Document honestly:
+
+Agent Undo can reliably target supported local filesystem state.
+
+Agent Undo cannot magically reverse:
+- sent emails
+- cloud API mutations
+- production database changes
+- purchases
+- external messages
+- deleted remote resources
+
+This limitation actually improves trust.
+
+Potential future slogan:
+
+“Undo your workspace.
+Not the laws of physics.”
+
+============================================================
+56. FUTURE EXPANSION MAP
+============================================================
+
+PHASE 1:
+Undo
+
+PHASE 2:
+Observe
+
+PHASE 3:
+Control
+
+PHASE 4:
+Govern
+
+PHASE 5:
+Prove
+
+The ladder:
+
+UNDO
+  ->
+FLIGHT RECORDER
+  ->
+RECEIPTS
+  ->
+PERMISSION FIREWALL
+  ->
+RISK ENGINE
+  ->
+POLICY
+  ->
+TEAM CONTROL PLANE
+  ->
+ENTERPRISE GOVERNANCE
+
+This is the full company map.
+
+============================================================
+57. FUTURE PRODUCTS
+============================================================
+
+1. Agent Undo CLI
+Core open source.
+
+2. Agent Flight Recorder
+Observability.
+
+3. Agent Receipt
+Portable evidence of actions.
+
+4. Agent Firewall
+Permission control.
+
+5. Agent Risk
+Danger detection.
+
+6. Agent Policy
+Declarative policy.
+
+7. Agent Cloud
+Team control plane.
+
+8. Agent Audit
+Governance/compliance.
+
+Possible eventual category:
+“Datadog + Cloudflare + Git for AI agents”
+but do NOT use this line publicly too early.
+
+============================================================
+58. PRODUCT PHILOSOPHY
+============================================================
+
+We are not anti-agent.
+
+We are pro-reversibility.
+
+We don't want humans to supervise every keystroke.
+
+We want humans to have:
+- confidence
+- receipts
+- boundaries
+- recovery
+
+The goal is not:
+“stop AI from acting.”
+
+The goal:
+“make acting safely cheap.”
+
+============================================================
+59. WHAT WOULD MAKE THIS FAIL?
+============================================================
+
+Failure mode 1:
+It is technically impressive but impossible to install.
+
+Fix:
+one-line install.
+
+Failure mode 2:
+Restore isn't trustworthy.
+
+Fix:
+aggressive testing + recovery checkpoint.
+
+Failure mode 3:
+It sounds like security software.
+
+Fix:
+“Ctrl+Z for AI agents.”
+
+Failure mode 4:
+Too many features.
+
+Fix:
+cut scope.
+
+Failure mode 5:
+No visual demo.
+
+Fix:
+make the failure dramatic.
+
+Failure mode 6:
+Name is forgettable.
+
+Fix:
+keep Agent Undo.
+
+Failure mode 7:
+Trying to solve cloud infrastructure immediately.
+
+Fix:
+workspace first.
+
+Failure mode 8:
+Launch is over-polished and boring.
+
+Fix:
+ship the useful prototype and explain the primitive.
+
+============================================================
+60. “100-PERSON COMPANY” OPERATING MODEL
+============================================================
+
+Act as though there are 100 people behind this, even if one engineer is actually
+building it.
+
+Roles mentally represented:
+
+CEO:
+Owns thesis and distribution.
+
+CTO:
+Owns architecture and correctness.
+
+VP Engineering:
+Owns execution discipline.
+
+Staff Engineer:
+Owns filesystem/recovery core.
+
+Security Engineer:
+Threat model + destructive operation review.
+
+Developer Experience:
+CLI ergonomics.
+
+Designer:
+README / terminal / website later.
+
+Developer Relations:
+GitHub/community.
+
+Growth:
+Launch loops.
+
+PM:
+Keeps scope ruthless.
+
+Customer:
+Reports pain.
+
+Finance/legal:
+Ignore until traction, but keep licensing/security clean.
+
+For MVP:
+One capable engineer can implement the core.
+The “100-person mindset” means every function is represented in the decision
+quality, not that we need 100 people.
+
+============================================================
+61. EXECUTIVE PRIORITY ORDER
+============================================================
+
+P0:
+Reliable restore.
+
+P0:
+Safe checkpoint.
+
+P0:
+Excellent CLI.
+
+P0:
+Demo.
+
+P0:
+README.
+
+P1:
+Session history.
+
+P1:
+Agent adapters.
+
+P1:
+Recovery.
+
+P1:
+Doctor.
+
+P2:
+Risk detection.
+
+P2:
+Policies.
+
+P3:
+Team/cloud.
+
+Nothing above P0 should delay launch if P0 is solid.
+
+============================================================
+62. FINAL LEADERSHIP CALL
+============================================================
+
+We are betting on one primitive:
+
+REVERSIBLE AGENT EXECUTION.
+
+We will not compete by having 100 features.
+
+We will win by being the easiest product to explain:
+
+“It's Ctrl+Z for AI agents.”
+
+Build the smallest reliable thing that makes that sentence true.
+
+Then make the demo unforgettable.
+
+Then expand from:
+UNDO
+to
+RECEIPTS
+to
+OBSERVABILITY
+to
+CONTROL
+to
+GOVERNANCE.
+
+The repo is the wedge.
+The primitive is the product.
+The ecosystem is the business.
+
+============================================================
+63. FINAL LAUNCH CHECKLIST
+============================================================
+
+[ ] clean install works
+[ ] checkpoint works
+[ ] restore works
+[ ] recovery checkpoint works
+[ ] verify works
+[ ] tests cover destructive paths
+[ ] docs explain limitations
+[ ] demo takes <30 sec
+[ ] README has GIF/video
+[ ] tagline says “Ctrl+Z for AI agents”
+[ ] no account required
+[ ] no fake claims
+[ ] no silent failures
+[ ] release package works
+[ ] launch post is written
+[ ] HN post is ready
+[ ] community targets are ready
+[ ] issue template is ready
+[ ] security policy is ready
+
+============================================================
+64. THE ONE SENTENCE TO KEEP VISIBLE
+============================================================
+
+BUILD THIS:
+
+“Give AI agents a Ctrl+Z.”
+
+Everything else is downstream.
+
+============================================================
+END OF DOCUMENT
+============================================================

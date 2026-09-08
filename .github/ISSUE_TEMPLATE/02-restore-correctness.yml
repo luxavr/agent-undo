@@ -1,0 +1,39 @@
+name: Restore correctness
+description: Undo, verify, or recover did not return the checkpointed state, but you do not think data is gone yet.
+title: "[RESTORE-CORRECTNESS] "
+labels: ["RESTORE-CORRECTNESS"]
+body:
+  - type: markdown
+    attributes:
+      value: If files are already missing or wrong on disk, use the Data safety template instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: command
+    attributes:
+      label: Command
+      options:
+        - undo
+        - verify
+        - recover
+        - run
+        - other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+    validations:
+      required: true

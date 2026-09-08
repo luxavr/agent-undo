@@ -1,0 +1,58 @@
+#!/bin/sh
+# Controlled "bad agent" for the Agent Undo demo. Safe: refuses to run unless
+# the materialized demo marker is present. Default: modify / create / delete.
+# Opt-in: --commit, --branch.
+set -eu
+
+if [ ! -f .agent-undo-demo ]; then
+	printf '%s\n' "ERROR" >&2
+	printf '\n' >&2
+	printf '%s\n' "This demo can only run inside a materialized Agent Undo demo repository." >&2
+	exit 1
+fi
+
+commit=0
+branch=0
+for arg in "$@"; do
+	case "$arg" in
+	--commit) commit=1 ;;
+	--branch) branch=1 ;;
+	-h|--help)
+		printf '%s\n' "usage: ./demo-agent [--commit] [--branch]"
+		exit 0
+		;;
+	*)
+		printf '%s\n' "demo-agent: unknown argument $arg" >&2
+		exit 1
+		;;
+	esac
+done
+
+# modify
+{
+	printf '%s\n' '#!/bin/sh'
+	printf '%s\n' 'echo "hello from a mutated demo"'
+} > app.sh
+{
+	printf '%s\n' 'name = "demo"'
+	printf '%s\n' 'theme = "dark"'
+} > config/app.toml
+printf '%s\n' 'DEMO_SECRET=mutated-by-agent' > .env.local
+
+# create
+mkdir -p extras
+printf '%s\n' 'agent wreckage' > wreckage.txt
+printf '%s\n' 'oops' > extras/oops.md
+
+# delete
+rm -f notes.txt
+
+if [ "$branch" -eq 1 ]; then
+	git checkout -q -b agent-wip
+fi
+if [ "$commit" -eq 1 ]; then
+	git add -A
+	git -c core.hooksPath=/dev/null commit -q -m "agent: mutate demo"
+fi
+
+exit 0

@@ -1,0 +1,41 @@
+name: Data safety
+description: Possible data loss, checkpoint corruption, or a restore that can destroy work.
+title: "[DATA-SAFETY] "
+labels: ["DATA-SAFETY"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Highest priority. If Agent Undo may have deleted, overwritten, or failed to restore real work, start here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, what the workspace looks like now.
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands
+      description: Exact argv. Do not paste secrets.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: ids
+    attributes:
+      label: Session / checkpoint ids
+      description: From session show if you have them.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: doctor output
+      render: text
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 14, Ubuntu 24.04
+    validations:
+      required: true
