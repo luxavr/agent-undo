@@ -91,6 +91,9 @@ materialize() {
 	tar -C "$FIXTURE" -cf - . | tar -C "$DEST" -xf -
 	cp "$AGENT_SRC" "$DEST/demo-agent"
 	chmod +x "$DEST/app.sh" "$DEST/demo-agent"
+	if [ ! -f "$DEST/.env.local" ]; then
+		printf '%s\n' 'DEMO_SECRET=not-a-real-secret' > "$DEST/.env.local"
+	fi
 	printf '%s\n' "$MARKER_TEXT" > "$DEST/.agent-undo-demo"
 
 	empty=$(mktemp -d "${TMPDIR:-/tmp}/agent-undo-git-template.XXXXXX")
