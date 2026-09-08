@@ -15,11 +15,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/idlfirhan/agent-undo/adapters/filesystem"
-	"github.com/idlfirhan/agent-undo/adapters/git"
-	"github.com/idlfirhan/agent-undo/internal/ignore"
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/adapters/filesystem"
+	"github.com/luxavr/agent-undo/adapters/git"
+	"github.com/luxavr/agent-undo/internal/ignore"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 const schemaVersion = 1

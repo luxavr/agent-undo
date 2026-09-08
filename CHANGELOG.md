@@ -14,3 +14,4 @@
 - Batch 6: `doctor` readiness report. Status READY / READY WITH WARNINGS / NOT READY. Lock probe (acquire+release). Bounded class walk. No repair.
 - Batch 7: `recover [--yes] [cp_…]`. Latest valid recovery checkpoint for this repository, or explicit `kind: recovery` id. Same restore engine. Optional lineage `source` on recovery manifests.
 - v0.1 feature freeze: public contract `docs/v0.1-contract.md`, canonical demo `examples/`, pre-launch audit, GitHub issue taxonomy. Overlay restores a file even when the live path is a directory with uncaptured children.
+- Public identity: module and install path `github.com/luxavr/agent-undo`. README reordered for first-60-seconds. Canonical demo capture in `docs/demo-capture.txt` / `docs/demo.gif`.

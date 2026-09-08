@@ -7,11 +7,11 @@ import (
 	"io"
 	"strings"
 
-	"github.com/idlfirhan/agent-undo/internal/checkpoint"
-	"github.com/idlfirhan/agent-undo/internal/diff"
-	"github.com/idlfirhan/agent-undo/internal/session"
-	"github.com/idlfirhan/agent-undo/internal/storage"
-	"github.com/idlfirhan/agent-undo/internal/verify"
+	"github.com/luxavr/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/diff"
+	"github.com/luxavr/agent-undo/internal/session"
+	"github.com/luxavr/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/verify"
 )
 
 const exitInternal = 3

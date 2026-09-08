@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/idlfirhan/agent-undo/internal/checkpoint"
-	"github.com/idlfirhan/agent-undo/internal/restore"
-	"github.com/idlfirhan/agent-undo/internal/session"
-	"github.com/idlfirhan/agent-undo/internal/verify"
+	"github.com/luxavr/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/restore"
+	"github.com/luxavr/agent-undo/internal/session"
+	"github.com/luxavr/agent-undo/internal/verify"
 )
 
 func cmdRecover(ctx context.Context, args []string, stdout, stderr io.Writer) int {

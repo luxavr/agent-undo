@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/idlfirhan/agent-undo/internal/ignore"
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/ignore"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 func TestCheckpointNoGit(t *testing.T) {

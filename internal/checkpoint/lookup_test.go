@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 func TestLatestRecoveryOrdering(t *testing.T) {

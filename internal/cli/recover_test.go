@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/session"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/session"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 func TestCLIRecoverNoCheckpoint(t *testing.T) {

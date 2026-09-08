@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/idlfirhan/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/security"
 )
 
 func TestOpenRejectsEscape(t *testing.T) {

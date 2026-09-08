@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/idlfirhan/agent-undo/internal/cli"
+	"github.com/luxavr/agent-undo/internal/cli"
 )
 
 func main() {

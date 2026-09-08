@@ -1,0 +1,50 @@
+# Canonical demo capture (2026-09-08)
+# Fixture: examples/setup-demo → disposable repo
+# Binary: ./bin/agent-undo
+# This file is the source of the README storyboard. Do not invent lines.
+
+$ agent-undo run ./demo-agent
+AGENT UNDO
+
+Session:
+  ABC3F9E9-3055E8A0
+
+Command:
+  ./demo-agent
+
+Duration:
+  00m 00s
+
+Agent:
+  exited 0
+
+Changes:
+  +3 created
+  ~3 modified
+  -1 deleted
+
+Git:
+  main
+  7ee0252d469300e9a6c4a8df5bdfc7d2b65ad5de → 7ee0252d469300e9a6c4a8df5bdfc7d2b65ad5de
+
+Checkpoint:
+  VERIFIED
+
+Undo:
+  AVAILABLE
+
+Scope:
+  Local checkpointed workspace state only.
+  External side effects are not reversed.
+
+Next:
+  agent-undo session show ABC3F9E9-3055E8A0
+  agent-undo diff ABC3F9E9-3055E8A0
+  agent-undo undo ABC3F9E9-3055E8A0
+
+$ agent-undo undo --yes ABC3F9E9-3055E8A0
+SUCCESS
+recovery checkpoint: cp_7995a3c1c5c59c5b55f40682
+
+$ agent-undo verify ABC3F9E9-3055E8A0
+SUCCESS

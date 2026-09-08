@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 func TestInspectNonGitReady(t *testing.T) {

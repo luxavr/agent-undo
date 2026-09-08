@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/idlfirhan/agent-undo/adapters/git"
-	"github.com/idlfirhan/agent-undo/internal/checkpoint"
-	"github.com/idlfirhan/agent-undo/internal/diff"
-	"github.com/idlfirhan/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/adapters/git"
+	"github.com/luxavr/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/diff"
+	"github.com/luxavr/agent-undo/internal/security"
 )
 
 // Status is owned by verify, not by restore APPLY.

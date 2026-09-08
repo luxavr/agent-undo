@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/idlfirhan/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/checkpoint"
 )
 
 func TestNilManifests(t *testing.T) {

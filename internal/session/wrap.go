@@ -6,11 +6,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/idlfirhan/agent-undo/internal/checkpoint"
-	"github.com/idlfirhan/agent-undo/internal/diff"
-	"github.com/idlfirhan/agent-undo/internal/process"
-	"github.com/idlfirhan/agent-undo/internal/security"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/diff"
+	"github.com/luxavr/agent-undo/internal/process"
+	"github.com/luxavr/agent-undo/internal/security"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 const (

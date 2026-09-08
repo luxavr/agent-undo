@@ -6,8 +6,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/idlfirhan/agent-undo/internal/doctor"
-	"github.com/idlfirhan/agent-undo/internal/storage"
+	"github.com/luxavr/agent-undo/internal/doctor"
+	"github.com/luxavr/agent-undo/internal/storage"
 )
 
 func cmdDoctor(ctx context.Context, args []string, stdout, stderr io.Writer) int {
