@@ -9,7 +9,7 @@ Public first-run install is a GitHub Release binary. This file is the **Go** pat
 Go 1.23+. Put `$(go env GOPATH)/bin` on `PATH` if you use `go install` (that directory is not on PATH by default).
 
 ```bash
-go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
+go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.1
 ```
 
 Unreleased tip of `main`:
@@ -29,7 +29,7 @@ go build -o bin/agent-undo ./cmd/agent-undo
 Untagged builds report `0.0.0-dev`. A release build injects the tag:
 
 ```bash
-go build -trimpath -ldflags "-X github.com/luxavr/agent-undo/internal/version.Version=v0.1.0" -o bin/agent-undo ./cmd/agent-undo
+go build -trimpath -ldflags "-X github.com/luxavr/agent-undo/internal/version.Version=v0.1.1" -o bin/agent-undo ./cmd/agent-undo
 ```
 
 Do not upload locally built binaries as a GitHub Release. Tags matching `v*` publish through `.github/workflows/release.yml`, which runs `scripts/build-release.sh`.

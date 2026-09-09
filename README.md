@@ -48,7 +48,7 @@ macOS or Linux. Windows is unsupported in v0.1. There is no Homebrew formula and
 
 **Primary:** checksum-verified GitHub Release binary (`darwin`/`linux` × `amd64`/`arm64`).
 
-1. Download `agent-undo_v0.1.0_<os>_<arch>` and `checksums.txt` from the [v0.1.0 release](https://github.com/luxavr/agent-undo/releases/tag/v0.1.0).
+1. Download `agent-undo_v0.1.1_<os>_<arch>` and `checksums.txt` from the [v0.1.1 release](https://github.com/luxavr/agent-undo/releases/tag/v0.1.1).
 2. Verify SHA-256 (`shasum -a 256 -c` or `sha256sum -c`).
 3. `chmod +x` the binary.
 4. Install it as `~/.local/bin/agent-undo` (`~/.local/bin` must be on `PATH`).
@@ -64,7 +64,7 @@ agent-undo doctor
 **Contributors** (Go 1.23+):
 
 ```bash
-go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
+go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.1
 ```
 
 ### Where Agent Undo stores data
@@ -213,7 +213,7 @@ go test -race ./...
 go vet ./...
 ```
 
-Tagged installs use `go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0`. GOPATH troubleshooting is in [CONTRIBUTING.md](CONTRIBUTING.md). CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
+Tagged installs use `go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.1`. GOPATH troubleshooting is in [CONTRIBUTING.md](CONTRIBUTING.md). CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
 
 ### Contributing
 

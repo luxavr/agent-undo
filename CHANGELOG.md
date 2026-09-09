@@ -17,6 +17,8 @@
 - Public identity: module and install path `github.com/luxavr/agent-undo`. README reordered for first-60-seconds. Canonical demo capture in `docs/demo-capture.txt` / `docs/demo.gif`.
 - Distribution pass: GitHub Release workflow (binaries after `v0.1.0`), `internal/version` ldflags, `doctor` prints `checking: <path>`. Until the tag, public install is `go install …@main`; README does not advertise a download URL that 404s.
 
+## v0.1.1
+
 ### Changed
 
 - Undo is allowed only when the wrapped process started (`StartErr == nil`). LookPath and `cmd.Start` failures keep a session checkpoint but are not undoable. Started + exit 2, SIGINT, and `FINAL_SNAPSHOT_FAILED` stay undoable. ADR 0004 command matrix updated.
