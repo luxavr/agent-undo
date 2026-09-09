@@ -67,6 +67,8 @@ type Record struct {
 
 // ProcessInfo is the child result.
 type ProcessInfo struct {
+	// Started is true after process.Execute returns StartErr == nil.
+	Started  bool   `json:"started,omitempty"`
 	ExitCode *int   `json:"exitCode,omitempty"`
 	Signal   string `json:"signal,omitempty"`
 }
@@ -77,21 +79,37 @@ type AgentUndoInfo struct {
 	Error     string `json:"error,omitempty"`
 }
 
+// ProcessStarted reports whether the wrapped process actually started
+// (process.Execute returned StartErr == nil). v0.1.0 records did not persist
+// Started; ExitCode set after a successful Start is the compatibility signal.
+func (r Record) ProcessStarted() bool {
+	if r.Process.Started {
+		return true
+	}
+	return r.Process.ExitCode != nil
+}
+
+func terminalWithCheckpoint(r Record) bool {
+	if r.CheckpointID == "" {
+		return false
+	}
+	switch r.State {
+	case StateCompleted, StateInterrupted, StateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Allows reports whether op is permitted (ADR 0004).
 func (r Record) Allows(op Op) bool {
 	switch op {
 	case OpShow:
 		return r.ID != ""
-	case OpUndo, OpVerify:
-		if r.CheckpointID == "" {
-			return false
-		}
-		switch r.State {
-		case StateCompleted, StateInterrupted, StateFailed:
-			return true
-		default:
-			return false
-		}
+	case OpVerify:
+		return terminalWithCheckpoint(r)
+	case OpUndo:
+		return terminalWithCheckpoint(r) && r.ProcessStarted()
 	case OpDiff:
 		return r.CheckpointID != "" && r.FinalManifestID != "" &&
 			(r.State == StateCompleted || r.State == StateInterrupted || r.State == StateFailed)

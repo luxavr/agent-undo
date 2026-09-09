@@ -2,12 +2,14 @@ package session
 
 import (
 	"context"
+	"io"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/luxavr/agent-undo/internal/checkpoint"
+	"github.com/luxavr/agent-undo/internal/security"
 	"github.com/luxavr/agent-undo/internal/storage"
 )
 
@@ -305,5 +307,31 @@ func TestLoadReceiptIncompleteCheckpoint(t *testing.T) {
 	}
 	if r.UndoReason != "checkpoint verification failed" {
 		t.Fatalf("%q", r.UndoReason)
+	}
+}
+
+func TestLoadReceiptSpawnFailedNoUndo(t *testing.T) {
+	root := t.TempDir()
+	store, err := storage.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := security.NewBoundary(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := Wrap(context.Background(), WrapOptions{
+		Boundary: b, Store: store, Argv: []string{"agent-undo-missing-bin"},
+		Stdout: io.Discard, Stderr: io.Discard,
+	})
+	got := FormatShow(store, res.Record)
+	if !strings.Contains(got, "Undo:\n  UNAVAILABLE") {
+		t.Fatalf("%s", got)
+	}
+	if !strings.Contains(got, "wrapped process did not start") {
+		t.Fatalf("%s", got)
+	}
+	if strings.Contains(got, "agent-undo undo ") {
+		t.Fatalf("must not advertise undo:\n%s", got)
 	}
 }

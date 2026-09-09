@@ -52,11 +52,14 @@ When git was captured: undo moves HEAD back to the captured SHA if needed, then 
 - Ambiguous branch/ref state
 - Path that escapes the repository boundary
 - Unverified “success”
+- `run` when the cleaned working directory is the user home directory (exit 1). `doctor` from `$HOME` warns; it does not refuse inspection.
+- `recover --yes` without an explicit recovery checkpoint id. Target selection may not be implicit.
 
 Doctor exists to surface these before the user trusts a session. It reports readiness; it does not repair. Standing limitations are always listed and do not by themselves make the install `NOT READY`.
 
 ## Session wrapper
 
+- **Undo requires a started process.** LookPath failure and `cmd.Start` failure leave a session checkpoint (verify/show still work) but `Undo: UNAVAILABLE`. This is eligibility, not a promise that undo is safe after later work on a started session.
 - **Exit status alone is not attribution.** A child may exit 3 and the session is `COMPLETED` / `CHILD_EXIT`. Agent Undo internal failure also exits 3 with `FAILED` / `AGENT_UNDO_ERROR`. Use `session show`.
 - Command-line arguments are persisted as provided. Do not pass secrets directly as command-line arguments. There is no redaction.
 - Environment variables, stdout, and stderr are not stored in the session record.

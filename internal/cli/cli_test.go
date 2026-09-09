@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -34,6 +35,12 @@ func TestHelp(t *testing.T) {
 		}
 		if strings.Contains(stdout, "not supported yet") {
 			t.Fatal("help must not imply a scheduled Cursor attach")
+		}
+		if !strings.Contains(stdout, "--yes requires an explicit cp_ id") {
+			t.Fatalf("help must state recover --yes needs a target:\n%s", stdout)
+		}
+		if !strings.Contains(stdout, "run refuses to checkpoint the user home directory") {
+			t.Fatalf("help must state home refusal:\n%s", stdout)
 		}
 	}
 }
@@ -100,4 +107,71 @@ func run(args []string) (string, string, int) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), args, &stdout, &stderr)
 	return stdout.String(), stderr.String(), code
+}
+
+func TestCLIRunRefusesHome(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	_, stderr, code := run([]string{"run", "true"})
+	if code != exitUsage || !strings.Contains(stderr, "refusing to checkpoint the home directory") {
+		t.Fatalf("%d %q", code, stderr)
+	}
+}
+
+func TestCLIRunAllowsProjectUnderHome(t *testing.T) {
+	home := t.TempDir()
+	proj := filepath.Join(home, "Projects", "foo")
+	if err := os.MkdirAll(proj, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(proj); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	_, stderr, code := run([]string{"run", "true"})
+	if code != 0 {
+		t.Fatalf("nested project must be allowed: %d %q", code, stderr)
+	}
+}
+
+func TestCLIDoctorHomeWarning(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	stdout, _, code := run([]string{"doctor"})
+	if code != 0 {
+		t.Fatalf("%d %s", code, stdout)
+	}
+	if !strings.Contains(stdout, "READY WITH WARNINGS") {
+		t.Fatalf("%s", stdout)
+	}
+	if !strings.Contains(stdout, "current directory is your home directory") {
+		t.Fatalf("%s", stdout)
+	}
+	if !strings.Contains(stdout, "agent-undo run will refuse to checkpoint $HOME") {
+		t.Fatalf("%s", stdout)
+	}
 }

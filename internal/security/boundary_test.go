@@ -126,6 +126,17 @@ func FuzzRel(f *testing.F) {
 	})
 }
 
+func TestSameDirectory(t *testing.T) {
+	a := t.TempDir()
+	b := t.TempDir()
+	if !SameDirectory(a, a) {
+		t.Fatal("same path")
+	}
+	if SameDirectory(a, b) {
+		t.Fatal("distinct temps")
+	}
+}
+
 func hasDotDotComponent(rel string) bool {
 	for _, p := range strings.Split(rel, "/") {
 		if p == ".." {

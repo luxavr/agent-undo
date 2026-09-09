@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted.
+Accepted. Amended for v0.1.1: a session is undoable only when the wrapped process started.
 
 ## Context
 
@@ -44,6 +44,7 @@ Session record fields:
 
 - `state`
 - `outcome`
+- `process.started` (true after `process.Execute` returns `StartErr == nil`)
 - `process.exit_code` (set when the child exited)
 - `process.signal` (set when killed by signal)
 - `agent_undo.error_code` (`3` on internal failure; otherwise unset/0)
@@ -60,18 +61,27 @@ Public wrapper exits:
 | Usage / invalid invocation | 1 |
 | Agent Undo internal failure | 3 |
 
+### Undo eligibility
+
+A session is undoable only when the wrapped process successfully started (`process.Execute` returned `StartErr == nil`). LookPath failure and `cmd.Start` failure are not undoable, even if a session checkpoint exists. Started + non-zero exit, started + SIGINT, and started + `FINAL_SNAPSHOT_FAILED` remain undoable.
+
+`process.started` records that fact. v0.1.0 records did not persist it; `process.exit_code != null` is the compatibility signal that the child started.
+
+This is an eligibility rule, not a divergence guard. Later work after a started session can still be restored away by undo. Failed-start sessions must not.
+
 ### Command matrix
 
-| State | Checkpoint present | show | diff | verify | undo |
-|---|---|---|---|---|---|
-| CREATED | no | ✓ | ✗ | ✗ | ✗ |
-| CHECKPOINTING | maybe | ✓ | ✗ | ✗ | ✗ |
-| RUNNING | yes | ✓ | ✗ | ✗ | ✗ (lock held) |
-| COMPLETED | yes | ✓ | ✓ | ✓ | ✓ |
-| INTERRUPTED | yes | ✓ | ✓ | ✓ | ✓ |
-| FAILED + `CHECKPOINT_FAILED` | no | ✓ | ✗ | ✗ | ✗ |
-| FAILED + `FINAL_SNAPSHOT_FAILED` | yes | ✓ | ✗ (no final) | ✓ | ✓ |
-| FAILED + `AGENT_UNDO_ERROR` after checkpoint | yes | ✓ | ✗ unless final exists | ✓ | ✓ |
+| State | Checkpoint present | Process started | show | diff | verify | undo |
+|---|---|---|---|---|---|---|
+| CREATED | no | no | ✓ | ✗ | ✗ | ✗ |
+| CHECKPOINTING | maybe | no | ✓ | ✗ | ✗ | ✗ |
+| RUNNING | yes | yes | ✓ | ✗ | ✗ | ✗ (lock held) |
+| COMPLETED | yes | yes | ✓ | ✓ | ✓ | ✓ |
+| INTERRUPTED | yes | yes | ✓ | ✓ | ✓ | ✓ |
+| FAILED + `CHECKPOINT_FAILED` | no | no | ✓ | ✗ | ✗ | ✗ |
+| FAILED + `FINAL_SNAPSHOT_FAILED` | yes | yes | ✓ | ✗ (no final) | ✓ | ✓ |
+| FAILED + `AGENT_UNDO_ERROR` after checkpoint, process never started | yes | no | ✓ | ✗ | ✓ | ✗ |
+| FAILED + `AGENT_UNDO_ERROR` after checkpoint, process started | yes | yes | ✓ | ✗ unless final exists | ✓ | ✓ |
 
 `keep` is not a command. It means do nothing.
 
@@ -107,3 +117,4 @@ It reports checkpoint integrity (`VERIFIED` / `UNAVAILABLE`), undo availability,
 - Final snapshot after the child uses a context that is not canceled (interrupt still produces a final manifest).
 - Restore APPLY is unchanged.
 - Nested `agent-undo run` in the same repo fails on the lock, not on argv inspection.
+- Undo eligibility is `StartErr == nil`, not “checkpoint exists.” ADR 0004’s v0.1.0 matrix overstated undo for failed-start sessions.

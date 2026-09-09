@@ -45,6 +45,17 @@ func NewBoundary(root string) (*Boundary, error) {
 // Root returns the canonical absolute path.
 func (b *Boundary) Root() string { return b.root }
 
+// SameDirectory reports whether two existing directories are the same
+// canonical path (Abs + EvalSymlinks), as NewBoundary uses.
+func SameDirectory(a, b string) bool {
+	ba, err1 := NewBoundary(a)
+	bb, err2 := NewBoundary(b)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return ba.Root() == bb.Root()
+}
+
 // RelPath returns a slash-separated path inside the boundary. It is lexical:
 // it does not follow the final component if that component is a symlink.
 func (b *Boundary) RelPath(path string) (string, error) {

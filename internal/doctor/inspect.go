@@ -69,9 +69,10 @@ type Report struct {
 
 // Options for Inspect. GOOS may be overridden in tests.
 type Options struct {
-	Root string
-	Home string
-	GOOS string
+	Root     string
+	Home     string
+	UserHome string
+	GOOS     string
 }
 
 // Inspect diagnoses Agent Undo prerequisites. It does not repair, crawl for
@@ -146,6 +147,18 @@ func Inspect(ctx context.Context, opts Options) Report {
 		} else {
 			repo.Lines = append(repo.Lines, Line{Level: LevelOK, Text: "repository lock available"})
 		}
+	}
+
+	userHome := opts.UserHome
+	if userHome == "" {
+		userHome, _ = os.UserHomeDir()
+	}
+	if b != nil && userHome != "" && security.SameDirectory(b.Root(), userHome) {
+		repo.Lines = append(repo.Lines, Line{
+			Level: LevelWarn,
+			Text:  "current directory is your home directory",
+			Extra: "agent-undo run will refuse to checkpoint $HOME",
+		})
 	}
 
 	if b != nil {

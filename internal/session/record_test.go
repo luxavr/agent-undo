@@ -29,12 +29,12 @@ func TestAllowsMatrix(t *testing.T) {
 		},
 		{
 			name: "completed",
-			rec:  Record{ID: sid, State: StateCompleted, CheckpointID: cp, FinalManifestID: fin},
+			rec:  Record{ID: sid, State: StateCompleted, CheckpointID: cp, FinalManifestID: fin, Process: ProcessInfo{Started: true}},
 			show: true, diff: true, verify: true, undo: true,
 		},
 		{
 			name: "interrupted",
-			rec:  Record{ID: sid, State: StateInterrupted, CheckpointID: cp, FinalManifestID: fin},
+			rec:  Record{ID: sid, State: StateInterrupted, CheckpointID: cp, FinalManifestID: fin, Process: ProcessInfo{Started: true}},
 			show: true, diff: true, verify: true, undo: true,
 		},
 		{
@@ -44,12 +44,27 @@ func TestAllowsMatrix(t *testing.T) {
 		},
 		{
 			name: "failed after checkpoint no final",
-			rec:  Record{ID: sid, State: StateFailed, Outcome: OutcomeFinalSnapshotFailed, CheckpointID: cp},
+			rec:  Record{ID: sid, State: StateFailed, Outcome: OutcomeFinalSnapshotFailed, CheckpointID: cp, Process: ProcessInfo{Started: true}},
+			show: true, verify: true, undo: true,
+		},
+		{
+			name: "failed spawn after checkpoint",
+			rec:  Record{ID: sid, State: StateFailed, Outcome: OutcomeAgentUndoError, CheckpointID: cp},
+			show: true, verify: true,
+		},
+		{
+			name: "failed agent undo after start",
+			rec:  Record{ID: sid, State: StateFailed, Outcome: OutcomeAgentUndoError, CheckpointID: cp, Process: ProcessInfo{Started: true}},
 			show: true, verify: true, undo: true,
 		},
 		{
 			name: "failed with both manifests",
-			rec:  Record{ID: sid, State: StateFailed, CheckpointID: cp, FinalManifestID: fin},
+			rec:  Record{ID: sid, State: StateFailed, CheckpointID: cp, FinalManifestID: fin, Process: ProcessInfo{Started: true}},
+			show: true, diff: true, verify: true, undo: true,
+		},
+		{
+			name: "v0.1.0 started infers exit code",
+			rec:  Record{ID: sid, State: StateCompleted, CheckpointID: cp, FinalManifestID: fin, Process: ProcessInfo{ExitCode: intPtr(0)}},
 			show: true, diff: true, verify: true, undo: true,
 		},
 	}
@@ -70,3 +85,5 @@ func TestAllowsMatrix(t *testing.T) {
 		})
 	}
 }
+
+func intPtr(v int) *int { return &v }

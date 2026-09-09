@@ -108,6 +108,7 @@ func Wrap(ctx context.Context, opts WrapOptions) WrapResult {
 	if pr.StartErr != nil {
 		return fail(OutcomeAgentUndoError, pr.StartErr, internalExit)
 	}
+	rec.Process.Started = true
 	code := pr.ExitCode
 	rec.Process.ExitCode = &code
 	rec.Process.Signal = pr.Signal

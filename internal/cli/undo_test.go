@@ -179,3 +179,39 @@ func sessionIDFromShow(t *testing.T, out string) string {
 	t.Fatalf("no Session: line in %q", out)
 	return ""
 }
+
+func TestCLIUndoRefusesFailedSpawn(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	stdout, stderr, code := run([]string{"run", "agent-undo-missing-bin"})
+	if code != exitInternal {
+		t.Fatalf("run %d %q %q", code, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "Undo:\n  UNAVAILABLE") {
+		t.Fatalf("receipt:\n%s", stdout)
+	}
+	id := sessionIDFromShow(t, stdout)
+	stdout, stderr, code = run([]string{"verify", id})
+	if code != 0 || !strings.Contains(stdout, "SUCCESS") {
+		t.Fatalf("verify after failed spawn: %d %q %q", code, stdout, stderr)
+	}
+	if err := os.WriteFile(filepath.Join(root, "later.txt"), []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, code = run([]string{"undo", "--yes", id})
+	if code != exitUsage || !strings.Contains(stderr, "did not start a wrapped process") {
+		t.Fatalf("undo %d %q", code, stderr)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "later.txt"))
+	if err != nil || string(body) != "keep" {
+		t.Fatalf("later work must survive: %q %v", body, err)
+	}
+}

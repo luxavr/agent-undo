@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/luxavr/agent-undo/internal/checkpoint"
 	"github.com/luxavr/agent-undo/internal/diff"
+	"github.com/luxavr/agent-undo/internal/security"
 	"github.com/luxavr/agent-undo/internal/session"
 	"github.com/luxavr/agent-undo/internal/storage"
 	"github.com/luxavr/agent-undo/internal/verify"
@@ -28,6 +30,10 @@ func cmdRun(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(stderr, "run: %v\n", err)
 		return exitInternal
+	}
+	if home, err := os.UserHomeDir(); err == nil && security.SameDirectory(b.Root(), home) {
+		fmt.Fprintf(stderr, "run: refusing to checkpoint the home directory. cd to a project first.\n")
+		return exitUsage
 	}
 	res := session.Wrap(ctx, session.WrapOptions{
 		Boundary: b,
@@ -139,6 +145,9 @@ func loadSession(store *storage.Store, id string, op session.Op) (session.Record
 		return session.Record{}, err
 	}
 	if !rec.Allows(op) {
+		if op == session.OpUndo && rec.CheckpointID != "" && !rec.ProcessStarted() {
+			return session.Record{}, fmt.Errorf("session %s did not start a wrapped process; undo is not available", rec.ID)
+		}
 		return session.Record{}, fmt.Errorf("session %s state %s does not allow %s", rec.ID, rec.State, op)
 	}
 	return rec, nil

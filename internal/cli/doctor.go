@@ -25,7 +25,11 @@ func cmdDoctor(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		fmt.Fprintf(stderr, "doctor: %v\n", err)
 		return exitInternal
 	}
-	rep := doctor.Inspect(ctx, doctor.Options{Root: wd, Home: home})
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		userHome = ""
+	}
+	rep := doctor.Inspect(ctx, doctor.Options{Root: wd, Home: home, UserHome: userHome})
 	fmt.Fprint(stdout, doctor.Render(rep))
 	if rep.Status == doctor.StatusNotReady {
 		return exitInternal

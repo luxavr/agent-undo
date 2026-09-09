@@ -150,6 +150,9 @@ func undoReason(rec Record, cpOK bool, cpReason string) string {
 		}
 		return "checkpoint verification failed"
 	}
+	if !rec.ProcessStarted() {
+		return "wrapped process did not start"
+	}
 	return "undo not permitted"
 }
 

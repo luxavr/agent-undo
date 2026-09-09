@@ -35,6 +35,8 @@ The checkpoint is the source of truth. Git is one dimension of state, not the wh
 
 Canonical `undo` / `verify` / `diff` / `session show` take a **session id** (`XXXXXXXX-XXXXXXXX`). Raw checkpoint ids (`cp_…`) are rejected at the CLI.
 
+Undo requires the wrapped process to have started (`StartErr == nil`). `recover --yes` requires an explicit `cp_…`. `run` refuses when cwd is the user home directory; `doctor` warns there.
+
 `session show` = receipt/metadata. `diff` = file/state delta. `recover` = recovery checkpoint. `keep` is not a command.
 
 Do not add `init` or `inspect`. Ignore leftover `npm/pnpm` Batch 0 text in the PRD.

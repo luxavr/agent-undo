@@ -20,6 +20,19 @@ func TestCLIRecoverNoCheckpoint(t *testing.T) {
 	if code != exitUsage {
 		t.Fatalf("code %d stderr %q", code, stderr)
 	}
+	if !strings.Contains(stderr, "--yes requires an explicit recovery checkpoint id") {
+		t.Fatalf("%q", stderr)
+	}
+}
+
+func TestCLIRecoverNoArgNoRecovery(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	chdir(t, root)
+	_, stderr, code := run([]string{"recover"})
+	if code != exitUsage {
+		t.Fatalf("code %d stderr %q", code, stderr)
+	}
 	if strings.TrimSpace(stderr) != "no recovery checkpoint for this repository." {
 		t.Fatalf("%q", stderr)
 	}
@@ -65,14 +78,23 @@ func TestCLIRecoverRejectsSessionAndNonRecovery(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("undo %d %q %q", code, stdout, stderr)
 	}
-	stdout, stderr, code = run([]string{"recover", "--yes"})
+	recID := recoveryIDFromUndo(t, stdout)
+	_, stderr, code = run([]string{"recover", "--yes"})
+	if code != exitUsage || !strings.Contains(stderr, "--yes requires an explicit recovery checkpoint id") {
+		t.Fatalf("implicit --yes must refuse: %d %q", code, stderr)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "a.txt"))
+	if err != nil || string(body) != "old" {
+		t.Fatalf("undo must still hold: %q %v", body, err)
+	}
+	stdout, stderr, code = run([]string{"recover", "--yes", recID})
 	if code != 0 {
 		t.Fatalf("recover %d %q %q", code, stdout, stderr)
 	}
 	if !strings.Contains(stdout, "RECOVER") || !strings.Contains(stdout, "SUCCESS") {
 		t.Fatalf("%q", stdout)
 	}
-	body, err := os.ReadFile(filepath.Join(root, "a.txt"))
+	body, err = os.ReadFile(filepath.Join(root, "a.txt"))
 	if err != nil || string(body) != "new" {
 		t.Fatalf("got %q %v", body, err)
 	}
@@ -172,4 +194,15 @@ func chdir(t *testing.T, dir string) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Chdir(wd) })
+}
+
+func recoveryIDFromUndo(t *testing.T, out string) string {
+	t.Helper()
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "recovery checkpoint: ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "recovery checkpoint: "))
+		}
+	}
+	t.Fatalf("no recovery id in %q", out)
+	return ""
 }

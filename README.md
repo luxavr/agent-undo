@@ -52,7 +52,7 @@ macOS or Linux. Windows is unsupported in v0.1. There is no Homebrew formula and
 2. Verify SHA-256 (`shasum -a 256 -c` or `sha256sum -c`).
 3. `chmod +x` the binary.
 4. Install it as `~/.local/bin/agent-undo` (`~/.local/bin` must be on `PATH`).
-5. In the repository you intend to protect (not `$HOME` unless that directory is the workspace):
+5. In the repository you intend to protect (`run` refuses the user home directory):
 
 ```bash
 cd <your-repo>
@@ -122,7 +122,7 @@ agent-undo run claude
 agent-undo run -- your-agent --flags
 ```
 
-`run` takes a lock, writes a verified checkpoint, starts the command in its own process group, then prints a receipt. `run` and `session show` print the same receipt.
+`run` takes a lock, writes a verified checkpoint, starts the command in its own process group, then prints a receipt. `run` and `session show` print the same receipt. `run` refuses when the current directory is the user home directory. `doctor` from `$HOME` still inspects and warns that `run` will refuse.
 
 v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.
 
@@ -137,12 +137,15 @@ SUCCESS
 recovery checkpoint: cp_7995a3c1c5c59c5b55f40682
 ```
 
-Undo always creates a recovery checkpoint before APPLY. To put the post-agent state back:
+Undo always creates a recovery checkpoint before APPLY. Undo is available only when the wrapped process started. A failed spawn still leaves a session checkpoint for `verify` / `session show`, but not for undo.
+
+To put the post-agent state back, name the recovery checkpoint. `--yes` skips confirmation only; it does not pick the target.
 
 ```bash
-agent-undo recover [--yes]
-agent-undo recover [--yes] cp_<id>
+agent-undo recover --yes cp_<id>
 ```
+
+`recover` with no id may still select the latest recovery for this repository and ask for confirmation. `recover --yes` without `cp_<id>` is refused.
 
 ### Verify
 

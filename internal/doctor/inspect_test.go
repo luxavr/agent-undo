@@ -29,6 +29,9 @@ func TestInspectNonGitReady(t *testing.T) {
 	if !strings.Contains(out, "git repository not present") {
 		t.Fatal(out)
 	}
+	if strings.Contains(out, "current directory is your home directory") {
+		t.Fatal("non-home cwd must not warn about $HOME:\n", out)
+	}
 	if strings.Contains(out, "⚠ Git index") || strings.Contains(out, "⚠ external side effects") {
 		t.Fatal("standing limitations must not be warnings:\n", out)
 	}
@@ -56,6 +59,21 @@ func TestInspectCheckingAbsolutePath(t *testing.T) {
 	envAt := strings.Index(out, "Environment")
 	if checkAt < 0 || envAt < 0 || checkAt > envAt {
 		t.Fatalf("checking must appear above Environment:\n%s", out)
+	}
+}
+
+func TestInspectHomeDirectoryWarns(t *testing.T) {
+	root := t.TempDir()
+	rep := Inspect(context.Background(), Options{Root: root, Home: t.TempDir(), UserHome: root, GOOS: "darwin"})
+	if rep.Status != StatusReadyWithWarnings {
+		t.Fatalf("%s\n%s", rep.Status, Render(rep))
+	}
+	out := Render(rep)
+	if !strings.Contains(out, "current directory is your home directory") {
+		t.Fatal(out)
+	}
+	if !strings.Contains(out, "agent-undo run will refuse to checkpoint $HOME") {
+		t.Fatal(out)
 	}
 }
 

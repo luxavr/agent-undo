@@ -16,3 +16,9 @@
 - v0.1 feature freeze: public contract `docs/v0.1-contract.md`, canonical demo `examples/`, pre-launch audit, GitHub issue taxonomy. Overlay restores a file even when the live path is a directory with uncaptured children.
 - Public identity: module and install path `github.com/luxavr/agent-undo`. README reordered for first-60-seconds. Canonical demo capture in `docs/demo-capture.txt` / `docs/demo.gif`.
 - Distribution pass: GitHub Release workflow (binaries after `v0.1.0`), `internal/version` ldflags, `doctor` prints `checking: <path>`. Until the tag, public install is `go install …@main`; README does not advertise a download URL that 404s.
+
+### Changed
+
+- Undo is allowed only when the wrapped process started (`StartErr == nil`). LookPath and `cmd.Start` failures keep a session checkpoint but are not undoable. Started + exit 2, SIGINT, and `FINAL_SNAPSHOT_FAILED` stay undoable. ADR 0004 command matrix updated.
+- `recover --yes` without an explicit `cp_…` is refused. Interactive `recover` with no id may still select the latest recovery and confirm. Confirmation may be skipped; target selection may not.
+- `run` refuses when the cleaned working directory equals the user home directory. `doctor` from `$HOME` stays inspection-oriented and warns that `run` will refuse. Nested project directories and `/tmp` are unchanged.

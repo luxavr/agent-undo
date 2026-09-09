@@ -21,6 +21,10 @@ func cmdRecover(ctx context.Context, args []string, stdout, stderr io.Writer) in
 		fmt.Fprintf(stderr, "usage: agent-undo recover [--yes] [cp_<id>]\n")
 		return exitUsage
 	}
+	if id == "" && yes {
+		fmt.Fprintf(stderr, "recover: --yes requires an explicit recovery checkpoint id (cp_…). Confirmation may be skipped; target selection may not.\n")
+		return exitUsage
+	}
 	if id != "" {
 		if _, err := session.CanonicalSessionID(id); err == nil {
 			fmt.Fprintf(stderr, "recover: requires a recovery checkpoint id (cp_…), not a session id\n")

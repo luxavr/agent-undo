@@ -37,6 +37,8 @@ The workspace root: canonicalized directory the user invoked from, or the git to
 
 All captured paths are relative to this root, with `/` separators in the manifest. Restore writes only through `security.Boundary`.
 
+`run` refuses when that cleaned root equals the user home directory. Nested directories (`~/Projects/foo`, `/tmp/foo`) are allowed. `doctor` still inspects `$HOME` and warns that `run` will refuse.
+
 Git is optional. No `.git` → filesystem checkpoint only.
 
 ## Filesystem-state model (MVP)
@@ -73,13 +75,13 @@ Outcomes are orthogonal: `CHILD_EXIT`, `INTERRUPTED`, `AGENT_UNDO_ERROR`, `FINAL
 
 `agent-undo run <cmd>`:
 
-1. Resolve boundary. Acquire the single repository lock (fail closed if held).
+1. Resolve boundary. If it equals the user home directory, refuse (exit 1); no lock, no checkpoint. Acquire the single repository lock (fail closed if held).
 2. Create and **verify** a session checkpoint (`kind: session`). On failure: `FAILED` / `CHECKPOINT_FAILED`, release lock, exit 3.
 3. Spawn argv directly (no `sh -c`). Child gets its own process group. stdout/stderr inherit. Set `AGENT_UNDO_SESSION=<id>` as a marker only; the lock is authoritative.
 4. On exit or interrupt: signal group (SIGINT → grace → SIGTERM → grace → SIGKILL), wait, then create a **final** manifest with the same walker. `diff.Compare(before, after)`. Persist the session record. Release the lock.
 5. Print the receipt (same as `session show`). Return the child's exit status when `COMPLETED`. Interrupted after the agent started → 130. Agent Undo internal failure → 3.
 
-Exit status alone does not attribute failure. Use the session record (`state`, `outcome`, `process.exit_code`, `agent_undo.error_code`).
+Exit status alone does not attribute failure. Use the session record (`state`, `outcome`, `process.started`, `process.exit_code`, `agent_undo.error_code`). Undo is allowed only when the wrapped process started (`StartErr == nil`).
 
 Canonical CLI (`undo`, `verify`, `diff`, `session show`) takes a **session id**. Raw `cp_…` ids are rejected. Tests may call `restore.Run` with a checkpoint id.
 
@@ -94,7 +96,7 @@ v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.
 Status (standing limitations do not set it):
 
 - `READY` — required capabilities are available
-- `READY WITH WARNINGS` — non-blocking findings (exclusion classes, external symlink class, lock currently held)
+- `READY WITH WARNINGS` — non-blocking findings (exclusion classes, external symlink class, lock currently held, cwd is the user home directory)
 - `NOT READY` — cannot establish boundary, store, writable probe, lock probe, or supported OS
 
 Exit: `READY` / `READY WITH WARNINGS` → 0; `NOT READY` → 3; usage → 1.
@@ -124,7 +126,7 @@ LOCK → LOAD → VALIDATE → PLAN → RECOVERY CHECKPOINT → APPLY → VERIFY
 | VERIFY | Full recompute vs target checkpoint. Write count is not success. VERIFY owns SUCCESS / FAILED / INCOMPLETE. |
 | REPORT | May say incomplete. Must not say success unless VERIFY passed. |
 
-Recovery checkpoint capability is P0. `agent-undo recover [cp_…]` restores a `kind: recovery` checkpoint for the current boundary via the same restore engine. No-argument lookup is read-only and happens before `restore.Run`; after lock the engine re-LOAD/VALIDATE the selected id and fail closed. It does not switch targets. Lineage (`source`) is optional metadata.
+Recovery checkpoint capability is P0. `agent-undo recover [cp_…]` restores a `kind: recovery` checkpoint for the current boundary via the same restore engine. No-argument lookup is allowed only without `--yes`; it is read-only and happens before `restore.Run`. `recover --yes` requires an explicit `cp_…`. After lock the engine re-LOAD/VALIDATE the selected id and fail closed. It does not switch targets. Lineage (`source`) is optional metadata.
 
 Invariant:
 
@@ -147,7 +149,7 @@ agent-undo session show <session-id>
 agent-undo undo <session-id>
 agent-undo verify <session-id>
 agent-undo diff <session-id>
-agent-undo recover [cp_…]
+agent-undo recover [--yes] [cp_…]
 agent-undo doctor
 ```
 

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +35,9 @@ func TestWrapHappyPath(t *testing.T) {
 	})
 	if res.WrapperExit != 0 || res.Record.State != StateCompleted || res.Record.Outcome != OutcomeChildExit {
 		t.Fatalf("%+v", res.Record)
+	}
+	if !res.Record.ProcessStarted() {
+		t.Fatal("happy path must mark process started")
 	}
 	if res.Record.CheckpointID == "" || res.Record.FinalManifestID == "" {
 		t.Fatal("manifests")
@@ -122,8 +126,74 @@ func TestWrapMissingCommand(t *testing.T) {
 	if res.Record.CheckpointID == "" {
 		t.Fatal("checkpoint should exist")
 	}
-	if !res.Record.Allows(OpUndo) {
+	if res.Record.ProcessStarted() {
+		t.Fatal("process must not be marked started")
+	}
+	if res.Record.Allows(OpUndo) {
 		t.Fatal("undo after spawn fail")
+	}
+	if !res.Record.Allows(OpVerify) {
+		t.Fatal("verify still allowed")
+	}
+}
+
+func TestWrapStartDirectory(t *testing.T) {
+	root := t.TempDir()
+	store, b := harness(t, root)
+	dir := filepath.Join(root, "not-a-command")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	res := Wrap(context.Background(), WrapOptions{
+		Boundary: b, Store: store, Argv: []string{dir},
+		Stdout: io.Discard, Stderr: io.Discard,
+	})
+	if res.WrapperExit != 3 || res.Record.State != StateFailed {
+		t.Fatalf("%d %s %s", res.WrapperExit, res.Record.State, res.Record.AgentUndo.Error)
+	}
+	if res.Record.CheckpointID == "" {
+		t.Fatal("checkpoint should exist")
+	}
+	if res.Record.Allows(OpUndo) || res.Record.ProcessStarted() {
+		t.Fatal("directory argv must not be undoable")
+	}
+}
+
+func TestWrapChildExit2(t *testing.T) {
+	root := t.TempDir()
+	store, b := harness(t, root)
+	res := Wrap(context.Background(), WrapOptions{
+		Boundary: b, Store: store, Argv: []string{"sh", "-c", "exit 2"},
+		Stdout: io.Discard, Stderr: io.Discard,
+	})
+	if res.WrapperExit != 2 || res.Record.State != StateCompleted {
+		t.Fatalf("%d %s", res.WrapperExit, res.Record.State)
+	}
+	if !res.Record.ProcessStarted() || !res.Record.Allows(OpUndo) {
+		t.Fatal("started child must remain undoable")
+	}
+}
+
+func TestWrapFinalSnapshotFailedStartedUndoable(t *testing.T) {
+	root := t.TempDir()
+	mustWrite(t, filepath.Join(root, "a.txt"), "keep")
+	store, b := harness(t, root)
+	manifests := filepath.Join(store.Home, "manifests")
+	script := filepath.Join(root, "agent.sh")
+	mustWrite(t, script, "#!/bin/sh\nchmod a-w "+strconv.Quote(manifests)+"\n")
+	if err := os.Chmod(script, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(manifests, 0o755) })
+	res := Wrap(context.Background(), WrapOptions{
+		Boundary: b, Store: store, Argv: []string{script},
+		Stdout: io.Discard, Stderr: io.Discard,
+	})
+	if res.WrapperExit != internalExit || res.Record.Outcome != OutcomeFinalSnapshotFailed {
+		t.Fatalf("exit %d outcome %s err %s", res.WrapperExit, res.Record.Outcome, res.Record.AgentUndo.Error)
+	}
+	if !res.Record.ProcessStarted() || !res.Record.Allows(OpUndo) {
+		t.Fatal("started process with failed final snapshot must remain undoable")
 	}
 }
 
@@ -170,6 +240,9 @@ func TestWrapInterrupt(t *testing.T) {
 	}
 	if res.Record.FinalManifestID == "" {
 		t.Fatal("final manifest after interrupt")
+	}
+	if !res.Record.ProcessStarted() || !res.Record.Allows(OpUndo) {
+		t.Fatal("interrupted started process must remain undoable")
 	}
 }
 
