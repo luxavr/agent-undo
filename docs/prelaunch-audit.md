@@ -101,22 +101,22 @@ No open **BLOCKER**. Residual: a hostile agent with the user’s uid can still d
 | Annex | `docs/limitations.md` |
 | README | Product-shaped; links contract + limitations; does not invent a third spec |
 | Help “yet” | Removed so freeze does not imply a scheduled Cursor attach |
-| Clean-machine journeys | **Not done.** Human launch-gate item. |
+| Clean-machine journeys | Happy-path T1–T4 re-measured on darwin/arm64 against the `v0.1.0` GitHub Release. Full journeys A–D (failed agent, interrupt, commit+undo+recover) remain a human checklist. |
 | AI-agent onboarding | **OBSERVATION.** Once before tag: one fresh coding agent, public README only. Not an LLM benchmark. See below. |
 
 ## Launch blockers
 
 Open:
 
-1. Human journeys A–D on a clean machine (install → doctor/run/show/diff/undo/verify; failed agent; interrupt; commit+undo+recover).
-2. Distribution KPIs T1–T4 on a clean machine (do not replace A–D). Dry-run T1 with `scripts/build-release.sh` until the tag exists.
-3. Human ship/no-ship decision.
-4. Reproducible `v0.1.0` tag (not cut in this session).
+1. Full human journeys A–D beyond the darwin/arm64 T1–T4 smoke (failed agent; interrupt; commit+undo+recover).
+2. Human ship/no-ship for announcement (none in v0.1; tag-and-stop).
 
-Resolved this session:
+Resolved:
 
 - Overlay fail-closed on type-changed path with uncaptured children (now restores).
 - README/help/contract aligned with binary undo output and wrapper-only stance.
+- Reproducible `v0.1.0` tag (`978057fe`); GitHub Release four binaries + `checksums.txt`.
+- T1–T4 against the GitHub Release on darwin/arm64.
 
 ## Non-blocking observations
 

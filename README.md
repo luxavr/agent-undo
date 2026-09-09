@@ -46,22 +46,26 @@ Those lines are from the canonical demo fixture (`examples/setup-demo`), not a m
 
 macOS or Linux. Windows is unsupported in v0.1. There is no Homebrew formula and no `curl | sh` installer.
 
-**Prebuilt binaries** will ship in the `v0.1.0` [release](https://github.com/luxavr/agent-undo/releases) when that tag exists. Until then, do not curl a `v0.1.0` download URL.
+**Primary:** checksum-verified GitHub Release binary (`darwin`/`linux` × `amd64`/`arm64`).
 
-**Development / contributors** (Go 1.23+):
-
-```bash
-go install github.com/luxavr/agent-undo/cmd/agent-undo@main
-```
-
-Then, in the repository you intend to protect (not `$HOME` unless that directory is the workspace):
+1. Download `agent-undo_v0.1.0_<os>_<arch>` and `checksums.txt` from the [v0.1.0 release](https://github.com/luxavr/agent-undo/releases/tag/v0.1.0).
+2. Verify SHA-256 (`shasum -a 256 -c` or `sha256sum -c`).
+3. `chmod +x` the binary.
+4. Install it as `~/.local/bin/agent-undo` (`~/.local/bin` must be on `PATH`).
+5. In the repository you intend to protect (not `$HOME` unless that directory is the workspace):
 
 ```bash
 cd <your-repo>
 agent-undo doctor
 ```
 
-`doctor` asks: can this directory keep Agent Undo's promises? Inspect only; it does not initialize the repository. It prints `checking: /absolute/path` first, then status. After `v0.1.0`, the README will make the checksum-verified release binary the primary path and pin `go install` to `@v0.1.0`.
+`doctor` asks: can this directory keep Agent Undo's promises? Inspect only; it does not initialize the repository. It prints `checking: /absolute/path` first, then status.
+
+**Contributors** (Go 1.23+):
+
+```bash
+go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
+```
 
 ### Where Agent Undo stores data
 
@@ -206,7 +210,7 @@ go test -race ./...
 go vet ./...
 ```
 
-`go install` until `v0.1.0` is documented under Install. GOPATH troubleshooting is in [CONTRIBUTING.md](CONTRIBUTING.md). CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
+Tagged installs use `go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0`. GOPATH troubleshooting is in [CONTRIBUTING.md](CONTRIBUTING.md). CI: Ubuntu and macOS. Feature freeze: v0.1. Do not add Batch 8 subsystems. Report issues with the GitHub templates. Data-safety and restore-correctness outrank stars.
 
 ### Contributing
 

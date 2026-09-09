@@ -8,16 +8,14 @@ Public first-run install is a GitHub Release binary. This file is the **Go** pat
 
 Go 1.23+. Put `$(go env GOPATH)/bin` on `PATH` if you use `go install` (that directory is not on PATH by default).
 
-Until `v0.1.0` exists:
+```bash
+go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
+```
+
+Unreleased tip of `main`:
 
 ```bash
 go install github.com/luxavr/agent-undo/cmd/agent-undo@main
-```
-
-After `v0.1.0` exists:
-
-```bash
-go install github.com/luxavr/agent-undo/cmd/agent-undo@v0.1.0
 ```
 
 Unreleased checkout:
