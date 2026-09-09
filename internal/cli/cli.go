@@ -13,7 +13,7 @@ const (
 	exitUsage = 1
 )
 
-const helpText = `Agent Undo — Ctrl+Z for a local agent session.
+const helpText = `Agent Undo — Ctrl+Z for a wrapped terminal AI coding session.
 
 USAGE
   agent-undo <command> [arguments]
@@ -26,7 +26,8 @@ COMMANDS
   verify <session-id>     Verify workspace against the session checkpoint
   diff <session-id>       Show file/state delta for a session
   recover [--yes] [cp_<id>]  Restore a recovery checkpoint
-  doctor                  Report whether this environment can keep Agent Undo's promises
+  doctor                  Inspect this directory and report whether this environment
+                          can keep Agent Undo's promises. Does not initialize the repository.
   version                 Print version
 
 v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.

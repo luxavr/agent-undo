@@ -1,6 +1,6 @@
 # Agent Undo — engineering rules
 
-Ctrl+Z for AI agents. Local-first checkpoint, session, restore. Go only in the core.
+Ctrl+Z for a wrapped terminal AI coding session. Local-first checkpoint, session, restore. Go only in the core.
 
 Read [docs/v0.1-contract.md](docs/v0.1-contract.md) for the frozen public behavior. Read [docs/prd-v2.txt](docs/prd-v2.txt) for product scope. Read [docs/analysis.md](docs/analysis.md) before changing architecture, CLI surface, restore, or git policy. Read [docs/architecture.md](docs/architecture.md) before adding packages. Read [docs/security-model.md](docs/security-model.md) before any path, symlink, lock, or spawn work. Read [docs/adr/0002-git-restore-policy.md](docs/adr/0002-git-restore-policy.md) before any git write. Read [docs/adr/0003-ignore-policy.md](docs/adr/0003-ignore-policy.md) before changing capture. Read [docs/adr/0004-session-state.md](docs/adr/0004-session-state.md) before changing `run`, session records, exit codes, or CLI target ids.
 
@@ -38,6 +38,24 @@ Canonical `undo` / `verify` / `diff` / `session show` take a **session id** (`XX
 `session show` = receipt/metadata. `diff` = file/state delta. `recover` = recovery checkpoint. `keep` is not a command.
 
 Do not add `init` or `inspect`. Ignore leftover `npm/pnpm` Batch 0 text in the PRD.
+
+## For coding agents
+
+Agent Undo is a user-level CLI.
+
+Do not:
+
+- run `agent-undo init`
+- modify the user's `.gitignore` for Agent Undo
+- create `.agent-undo/` inside the repository
+- treat `doctor` as repository setup
+
+Do:
+
+- inspect the current directory with `agent-undo doctor`
+- start protection with `agent-undo run <agent>`
+
+This source tree's `.gitignore` entry for `.agent-undo/` is contributor hygiene, not user installation. The store is `~/.agent-undo/` or `$AGENT_UNDO_HOME`. v0.1 is not a sandbox.
 
 ## Loop
 

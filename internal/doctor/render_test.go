@@ -10,7 +10,7 @@ func TestRenderReady(t *testing.T) {
 	got := Render(Report{
 		Status: StatusReady,
 		Sections: []Section{
-			{Title: "Environment", Lines: []Line{{Level: LevelOK, Text: "Agent Undo installed"}}},
+			{Title: "Environment", Lines: []Line{{Level: LevelOK, Text: "Agent Undo CLI available"}}},
 			{Title: "Support", Lines: []Line{
 				{Level: LevelOK, Text: "local filesystem restore"},
 				{Level: LevelNote, Text: "Git index/staging fidelity is not captured"},
@@ -20,7 +20,7 @@ func TestRenderReady(t *testing.T) {
 	want := `AGENT UNDO DOCTOR
 
 Environment
-  ✓ Agent Undo installed
+  ✓ Agent Undo CLI available
 
 Support
   ✓ local filesystem restore

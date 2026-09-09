@@ -1,14 +1,18 @@
 # Agent Undo
 
-## Ctrl+Z for AI agents.
+## Ctrl+Z for a wrapped terminal AI coding session.
 
-Checkpoint and restore a local terminal coding session with:
+Checkpoint and restore a local terminal coding session with `agent-undo run <agent>`.
+
+v0.1 does not attach to Cursor or other editors. Protection begins only when you wrap a terminal agent:
 
 ```text
 agent-undo run <agent>
 ```
 
 One checkpoint per session. One command to restore it.
+
+**Agent Undo is a user-level CLI.** It is not installed into your repository. It does not create config, store, or ignore files in your repository. Protection begins when you run `agent-undo run <agent>`.
 
 ![Canonical demo: agent mutates the repo, receipt shows +3 / ~3 / -1, undo prints SUCCESS](docs/demo.gif)
 
@@ -57,7 +61,37 @@ cd <your-repo>
 agent-undo doctor
 ```
 
-`doctor` prints `checking: /absolute/path` for the directory it inspects. After `v0.1.0`, the README will make the checksum-verified release binary the primary path and pin `go install` to `@v0.1.0`.
+`doctor` asks: can this directory keep Agent Undo's promises? Inspect only; it does not initialize the repository. It prints `checking: /absolute/path` first, then status. After `v0.1.0`, the README will make the checksum-verified release binary the primary path and pin `go install` to `@v0.1.0`.
+
+### Where Agent Undo stores data
+
+Agent Undo stores checkpoints and session data outside your repository, in the **global local Agent Undo store**:
+
+```text
+~/.agent-undo/
+```
+
+or the directory specified by `AGENT_UNDO_HOME`.
+
+Repository-scoped checkpoint and session data lives in that store, not in the protected tree. `doctor` does not create a project configuration or repository-local store.
+
+### For coding agents
+
+Agent Undo is a user-level CLI.
+
+Do not:
+
+- run `agent-undo init`
+- modify the user's `.gitignore` for Agent Undo
+- create `.agent-undo/` inside the repository
+- treat `doctor` as repository setup
+
+Do:
+
+- inspect the current directory with `agent-undo doctor`
+- start protection with `agent-undo run <agent>`
+
+v0.1 is not a sandbox. Same-uid processes can still destroy `$HOME/.agent-undo`.
 
 ### Demo
 

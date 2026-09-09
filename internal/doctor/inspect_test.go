@@ -20,6 +20,12 @@ func TestInspectNonGitReady(t *testing.T) {
 		t.Fatalf("%s\n%s", rep.Status, Render(rep))
 	}
 	out := Render(rep)
+	if !strings.Contains(out, "Agent Undo CLI available") {
+		t.Fatal(out)
+	}
+	if strings.Contains(out, "Agent Undo installed") {
+		t.Fatal("doctor must not say installed:\n", out)
+	}
 	if !strings.Contains(out, "git repository not present") {
 		t.Fatal(out)
 	}

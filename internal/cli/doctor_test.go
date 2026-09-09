@@ -39,6 +39,12 @@ func TestCLIDoctorReady(t *testing.T) {
 	if !strings.Contains(stdout, "checking: "+b.Root()) {
 		t.Fatalf("doctor must print the directory it inspects:\n%s", stdout)
 	}
+	if !strings.Contains(stdout, "Agent Undo CLI available") {
+		t.Fatalf("doctor must report CLI availability, not repo setup:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "Agent Undo installed") {
+		t.Fatal("doctor must not say installed")
+	}
 }
 
 func TestCLIDoctorWarnings(t *testing.T) {

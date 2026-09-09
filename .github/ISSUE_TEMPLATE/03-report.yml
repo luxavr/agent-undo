@@ -32,6 +32,17 @@ body:
     attributes:
       label: Commands (if any)
       render: shell
+  - type: dropdown
+    id: attach
+    attributes:
+      label: How did you run the agent?
+      description: v0.1 only protects agents wrapped with `agent-undo run`. Pick the closest match. This is not market telemetry.
+      options:
+        - Wrapped a terminal agent (`agent-undo run …`)
+        - Editor-native (Cursor or similar), not wrapped
+        - Not sure / other
+    validations:
+      required: true
   - type: input
     id: os
     attributes:

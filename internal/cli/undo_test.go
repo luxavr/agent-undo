@@ -75,15 +75,22 @@ func TestCLIUndoVerifyDiffSession(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	code = Run(context.Background(), []string{"verify", "cp_deadbeefdead"}, &stdout, &stderr)
-	if code != exitUsage || !strings.Contains(stderr.String(), "session id") {
+	if code != exitUsage || !strings.Contains(stderr.String(), "session id") || !strings.Contains(stderr.String(), "agent-undo recover") {
 		t.Fatalf("verify cp: %d %q", code, stderr.String())
 	}
 
 	stdout.Reset()
 	stderr.Reset()
 	code = Run(context.Background(), []string{"undo", "--yes", "cp_deadbeefdead"}, &stdout, &stderr)
-	if code != exitUsage || !strings.Contains(stderr.String(), "session id") {
+	if code != exitUsage || !strings.Contains(stderr.String(), "session id") || !strings.Contains(stderr.String(), "agent-undo recover") {
 		t.Fatalf("undo cp: %d %q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"diff", "cp_deadbeefdead"}, &stdout, &stderr)
+	if code != exitUsage || !strings.Contains(stderr.String(), "session id") || !strings.Contains(stderr.String(), "agent-undo recover") {
+		t.Fatalf("diff cp: %d %q", code, stderr.String())
 	}
 
 	stdout.Reset()

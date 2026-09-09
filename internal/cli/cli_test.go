@@ -23,8 +23,14 @@ func TestHelp(t *testing.T) {
 		if strings.Contains(stdout, "inspect") {
 			t.Fatalf("help must not advertise inspect:\n%s", stdout)
 		}
+		if !strings.Contains(stdout, "Ctrl+Z for a wrapped terminal AI coding session") {
+			t.Fatalf("help hero must match wrapper-only identity:\n%s", stdout)
+		}
 		if !strings.Contains(stdout, "Cursor/editor-native attachment is not supported") {
 			t.Fatalf("help must state wrapper-only v0.1:\n%s", stdout)
+		}
+		if !strings.Contains(stdout, "Does not initialize the repository") {
+			t.Fatalf("help must say doctor does not initialize:\n%s", stdout)
 		}
 		if strings.Contains(stdout, "not supported yet") {
 			t.Fatal("help must not imply a scheduled Cursor attach")

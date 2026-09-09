@@ -102,6 +102,7 @@ No open **BLOCKER**. Residual: a hostile agent with the user’s uid can still d
 | README | Product-shaped; links contract + limitations; does not invent a third spec |
 | Help “yet” | Removed so freeze does not imply a scheduled Cursor attach |
 | Clean-machine journeys | **Not done.** Human launch-gate item. |
+| AI-agent onboarding | **OBSERVATION.** Once before tag: one fresh coding agent, public README only. Not an LLM benchmark. See below. |
 
 ## Launch blockers
 
@@ -127,6 +128,7 @@ Resolved this session:
 - No in-product telemetry (intentional).
 - Demo counts in the README are illustrative of shape; live receipts win.
 - Windows remains unsupported.
+- **AI-agent onboarding comprehension.** Once before tag, give one fresh coding agent only the public README and ask it to explain/use the product. Record whether it infers: (1) user-level CLI, (2) no `init`, (3) no repo-local checkpoint store, (4) `doctor` is inspection, (5) `run` starts protection, (6) checkpoint storage is outside the repository. A miss is **OBSERVATION**, not a launch blocker: fix the copy. Do not add telemetry, agent heuristics, or an LLM CI harness.
 
 ## Commands run for this audit
 

@@ -28,7 +28,7 @@ const (
 	supportedSchema   = 1
 )
 
-// Status is install/repository readiness. Standing limitations do not set it.
+// Status is CLI and repository readiness. Standing limitations do not set it.
 type Status string
 
 const (
@@ -90,7 +90,7 @@ func Inspect(ctx context.Context, opts Options) Report {
 	gitSec.Title = "Git"
 	support.Title = "Support"
 
-	env.Lines = append(env.Lines, Line{Level: LevelOK, Text: "Agent Undo installed"})
+	env.Lines = append(env.Lines, Line{Level: LevelOK, Text: "Agent Undo CLI available"})
 	osLabel, osOK := supportedOS(goos)
 	if osOK {
 		env.Lines = append(env.Lines, Line{Level: LevelOK, Text: "Supported OS: " + osLabel})

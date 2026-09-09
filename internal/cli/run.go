@@ -132,7 +132,7 @@ func cmdDiff(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 
 func loadSession(store *storage.Store, id string, op session.Op) (session.Record, error) {
 	if session.LooksLikeCheckpointID(id) {
-		return session.Record{}, fmt.Errorf("requires a session id (XXXXXXXX-XXXXXXXX), not a checkpoint id")
+		return session.Record{}, fmt.Errorf("requires a session id (XXXXXXXX-XXXXXXXX), not a checkpoint id. This is a recovery checkpoint. Use agent-undo recover to restore it")
 	}
 	rec, err := session.LoadRecord(store, id)
 	if err != nil {

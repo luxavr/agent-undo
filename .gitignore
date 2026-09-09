@@ -15,7 +15,10 @@ vendor/
 .idea/
 .vscode/
 
-# Checkpoints if anyone runs the tool in-tree later
+# Contributor-only precaution:
+# the Agent Undo store normally lives in ~/.agent-undo (or $AGENT_UNDO_HOME),
+# not in the repository. Keep this ignored in case a contributor intentionally
+# points AGENT_UNDO_HOME at the checkout.
 .agent-undo/
 
 # Local release dry-runs (official artifacts come from the tag workflow)
