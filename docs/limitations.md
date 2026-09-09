@@ -52,7 +52,7 @@ When git was captured: undo moves HEAD back to the captured SHA if needed, then 
 - Ambiguous branch/ref state
 - Path that escapes the repository boundary
 - Unverified “success”
-- `run` when the cleaned working directory is the user home directory (exit 1). `doctor` from `$HOME` warns; it does not refuse inspection.
+- `run` when the cleaned working directory is the user home directory (exit 1), or when that identity cannot be proven (exit 3). `doctor` from proven `$HOME` warns; it does not refuse inspection and does not label unproven identity as home.
 - `recover --yes` without an explicit recovery checkpoint id. Target selection may not be implicit.
 
 Doctor exists to surface these before the user trusts a session. It reports readiness; it does not repair. Standing limitations are always listed and do not by themselves make the install `NOT READY`.

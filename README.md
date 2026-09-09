@@ -52,7 +52,7 @@ macOS or Linux. Windows is unsupported in v0.1. There is no Homebrew formula and
 2. Verify SHA-256 (`shasum -a 256 -c` or `sha256sum -c`).
 3. `chmod +x` the binary.
 4. Install it as `~/.local/bin/agent-undo` (`~/.local/bin` must be on `PATH`).
-5. In the repository you intend to protect (`run` refuses the user home directory):
+5. In the repository you intend to protect (`run` proceeds only after proving cwd is not `$HOME`):
 
 ```bash
 cd <your-repo>
@@ -122,7 +122,7 @@ agent-undo run claude
 agent-undo run -- your-agent --flags
 ```
 
-`run` takes a lock, writes a verified checkpoint, starts the command in its own process group, then prints a receipt. `run` and `session show` print the same receipt. `run` refuses when the current directory is the user home directory. `doctor` from `$HOME` still inspects and warns that `run` will refuse.
+`run` takes a lock, writes a verified checkpoint, starts the command in its own process group, then prints a receipt. `run` and `session show` print the same receipt. `run` proceeds only after proving the current directory is not the user home directory. `doctor` from `$HOME` still inspects and warns that `run` will refuse; it does not guess home when identity cannot be proven.
 
 v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.
 

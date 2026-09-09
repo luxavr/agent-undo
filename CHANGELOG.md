@@ -21,4 +21,4 @@
 
 - Undo is allowed only when the wrapped process started (`StartErr == nil`). LookPath and `cmd.Start` failures keep a session checkpoint but are not undoable. Started + exit 2, SIGINT, and `FINAL_SNAPSHOT_FAILED` stay undoable. ADR 0004 command matrix updated.
 - `recover --yes` without an explicit `cp_…` is refused. Interactive `recover` with no id may still select the latest recovery and confirm. Confirmation may be skipped; target selection may not.
-- `run` refuses when the cleaned working directory equals the user home directory. `doctor` from `$HOME` stays inspection-oriented and warns that `run` will refuse. Nested project directories and `/tmp` are unchanged.
+- `run` proceeds only after proving cwd is not the user home directory. Proven-same `$HOME` is exit 1. `UserHomeDir` or home canonicalization failure is exit 3. Both refuse before wrap. `doctor` from proven `$HOME` stays inspection-oriented and warns; it does not treat unproven identity as home. Nested project directories and `/tmp` are unchanged when identity is proven different.

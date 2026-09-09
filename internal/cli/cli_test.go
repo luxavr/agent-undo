@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,8 +40,8 @@ func TestHelp(t *testing.T) {
 		if !strings.Contains(stdout, "--yes requires an explicit cp_ id") {
 			t.Fatalf("help must state recover --yes needs a target:\n%s", stdout)
 		}
-		if !strings.Contains(stdout, "run refuses to checkpoint the user home directory") {
-			t.Fatalf("help must state home refusal:\n%s", stdout)
+		if !strings.Contains(stdout, "run proceeds only after proving cwd is not the user home directory") {
+			t.Fatalf("help must state home proof requirement:\n%s", stdout)
 		}
 	}
 }
@@ -146,6 +147,79 @@ func TestCLIRunAllowsProjectUnderHome(t *testing.T) {
 	_, stderr, code := run([]string{"run", "true"})
 	if code != 0 {
 		t.Fatalf("nested project must be allowed: %d %q", code, stderr)
+	}
+}
+
+func TestCLIRunRefusesUnprovenHomeMissingPath(t *testing.T) {
+	root, marker := runStartProbe(t)
+	t.Setenv("HOME", filepath.Join(t.TempDir(), "missing-home"))
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	_, stderr, code := run([]string{"run", filepath.Join(root, "agent.sh")})
+	assertRunDidNotStart(t, marker, stderr, code)
+}
+
+func TestCLIRunRefusesUnprovenUserHomeDirError(t *testing.T) {
+	root, marker := runStartProbe(t)
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	orig := userHomeDir
+	userHomeDir = func() (string, error) { return "", errors.New("no home") }
+	t.Cleanup(func() { userHomeDir = orig })
+	_, stderr, code := run([]string{"run", filepath.Join(root, "agent.sh")})
+	assertRunDidNotStart(t, marker, stderr, code)
+}
+
+func TestCLIDoctorUnprovenHomeNotLabeled(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", filepath.Join(t.TempDir(), "missing-home"))
+	t.Setenv("AGENT_UNDO_HOME", t.TempDir())
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	stdout, _, code := run([]string{"doctor"})
+	if code != 0 {
+		t.Fatalf("%d %s", code, stdout)
+	}
+	if strings.Contains(stdout, "current directory is your home directory") {
+		t.Fatalf("doctor must not infer $HOME when identity is unproven:\n%s", stdout)
+	}
+}
+
+func runStartProbe(t *testing.T) (root, marker string) {
+	t.Helper()
+	root = t.TempDir()
+	marker = filepath.Join(root, "started")
+	script := filepath.Join(root, "agent.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\nprintf started > "+marker+"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	return root, marker
+}
+
+func assertRunDidNotStart(t *testing.T, marker, stderr string, code int) {
+	t.Helper()
+	if code != exitInternal || !strings.Contains(stderr, "cannot prove the working directory is not the home directory") {
+		t.Fatalf("unproven home: %d %q", code, stderr)
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatalf("wrapped process started: %v", err)
+	}
+	stdout, listErr, listCode := run([]string{"session", "list"})
+	if listCode != 0 || listErr != "" || !strings.Contains(stdout, "no sessions") {
+		t.Fatalf("session/checkpoint created: %d %q %q", listCode, stdout, listErr)
 	}
 }
 

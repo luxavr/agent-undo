@@ -37,7 +37,7 @@ The workspace root: canonicalized directory the user invoked from, or the git to
 
 All captured paths are relative to this root, with `/` separators in the manifest. Restore writes only through `security.Boundary`.
 
-`run` refuses when that cleaned root equals the user home directory. Nested directories (`~/Projects/foo`, `/tmp/foo`) are allowed. `doctor` still inspects `$HOME` and warns that `run` will refuse.
+`run` proceeds only after proving that cleaned root is not the user home directory. Nested directories (`~/Projects/foo`, `/tmp/foo`) are allowed when identity is proven different. `doctor` still inspects `$HOME` and warns that `run` will refuse; it does not label unproven identity as home.
 
 Git is optional. No `.git` → filesystem checkpoint only.
 
@@ -75,7 +75,7 @@ Outcomes are orthogonal: `CHILD_EXIT`, `INTERRUPTED`, `AGENT_UNDO_ERROR`, `FINAL
 
 `agent-undo run <cmd>`:
 
-1. Resolve boundary. If it equals the user home directory, refuse (exit 1); no lock, no checkpoint. Acquire the single repository lock (fail closed if held).
+1. Resolve boundary. Proceed only after proving cwd is not the user home directory: proven-same → exit 1; identity unproven → exit 3. No lock, no checkpoint. Acquire the single repository lock (fail closed if held).
 2. Create and **verify** a session checkpoint (`kind: session`). On failure: `FAILED` / `CHECKPOINT_FAILED`, release lock, exit 3.
 3. Spawn argv directly (no `sh -c`). Child gets its own process group. stdout/stderr inherit. Set `AGENT_UNDO_SESSION=<id>` as a marker only; the lock is authoritative.
 4. On exit or interrupt: signal group (SIGINT → grace → SIGTERM → grace → SIGKILL), wait, then create a **final** manifest with the same walker. `diff.Compare(before, after)`. Persist the session record. Release the lock.

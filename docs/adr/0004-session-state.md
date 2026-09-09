@@ -59,6 +59,8 @@ Public wrapper exits:
 | Child exited N and session `COMPLETED` | N |
 | Interrupted after the agent started | 130 |
 | Usage / invalid invocation | 1 |
+| `run` from the user home directory | 1 |
+| `run` cannot prove cwd is not the user home directory | 3 |
 | Agent Undo internal failure | 3 |
 
 ### Undo eligibility

@@ -18,6 +18,33 @@ import (
 
 const exitInternal = 3
 
+// userHomeDir is os.UserHomeDir in production. Tests replace it to force
+// the unproven-identity branch.
+var userHomeDir = os.UserHomeDir
+
+const (
+	runHomeProvenMsg   = "run: refusing to checkpoint the home directory. cd to a project first."
+	runHomeUnprovenMsg = "run: refusing to start; cannot prove the working directory is not the home directory."
+)
+
+func refuseUnlessNotHome(b *security.Boundary, stderr io.Writer) int {
+	home, err := userHomeDir()
+	if err != nil {
+		fmt.Fprintln(stderr, runHomeUnprovenMsg)
+		return exitInternal
+	}
+	hb, err := security.NewBoundary(home)
+	if err != nil {
+		fmt.Fprintln(stderr, runHomeUnprovenMsg)
+		return exitInternal
+	}
+	if b.Root() == hb.Root() {
+		fmt.Fprintln(stderr, runHomeProvenMsg)
+		return exitUsage
+	}
+	return 0
+}
+
 func cmdRun(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(args) > 0 && args[0] == "--" {
 		args = args[1:]
@@ -31,9 +58,8 @@ func cmdRun(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "run: %v\n", err)
 		return exitInternal
 	}
-	if home, err := os.UserHomeDir(); err == nil && security.SameDirectory(b.Root(), home) {
-		fmt.Fprintf(stderr, "run: refusing to checkpoint the home directory. cd to a project first.\n")
-		return exitUsage
+	if code := refuseUnlessNotHome(b, stderr); code != 0 {
+		return code
 	}
 	res := session.Wrap(ctx, session.WrapOptions{
 		Boundary: b,

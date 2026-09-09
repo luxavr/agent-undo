@@ -35,7 +35,7 @@ v0.1 is wrapper-based. Cursor/editor-native attachment is not supported.
 Session ids look like XXXXXXXX-XXXXXXXX. Checkpoint ids (cp_…) are not accepted
 by undo/verify/diff/show. recover accepts only kind=recovery checkpoint ids.
 --yes skips confirmation only; recover --yes requires an explicit cp_ id.
-run refuses to checkpoint the user home directory.
+run proceeds only after proving cwd is not the user home directory.
 
 Exit status of a completed child is preserved. Interrupted sessions exit 130.
 Agent Undo internal failures exit 3. Exit status alone does not attribute the
